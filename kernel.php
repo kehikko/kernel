@@ -1,8 +1,5 @@
 <?php
 
-/* custom require */
-require __DIR__ . '/../modules/Kotivo/KotivoConstants.php';
-
 define('ROUTE_KEY_ACTION', 'action');
 define('ROUTE_KEY_PATTERN', 'pattern');
 define('ROUTE_KEY_CONTROLLER', 'controller');
