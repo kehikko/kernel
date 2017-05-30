@@ -1408,14 +1408,17 @@ class kernel
 				{
 					$module_file = $module;
 				}
-				else
+				else if (isset($module['class']))
 				{
 					$module_file = $module['class'];
 				}
-				$module_doctrine_path = dirname($modules_path . '/' . $module_file) . '/doctrine';
-				if (is_dir($module_doctrine_path))
+				if ($module_file)
 				{
-					$directories[] = $module_doctrine_path;
+					$module_doctrine_path = dirname($modules_path . '/' . $module_file) . '/doctrine';
+					if (is_dir($module_doctrine_path))
+					{
+						$directories[] = $module_doctrine_path;
+					}
 				}
 			}
 
