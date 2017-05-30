@@ -75,12 +75,6 @@ class kernel
 	 */
 	public function __construct()
 	{
-		/* add composer library autoloader if it exists */
-		$composer_autoload = realpath(__DIR__ . '/../lib/vendor/autoload.php');
-		if (file_exists($composer_autoload))
-		{
-			require_once $composer_autoload;
-		}
 		spl_autoload_register(array(__CLASS__, 'autoload'));
 	}
 
@@ -120,9 +114,9 @@ class kernel
 	 * @param  string $config_dir Path to kernel configuration directory. Default is '../config/'.
 	 * @return Route  controller parsed from url.
 	 */
-	public function load($config_dir = '../config/')
+	public function load($config_dir)
 	{
-		$this->config_dir = realpath(__DIR__ . '/' . $config_dir);
+		$this->config_dir = realpath($config_dir);
 
 		$this->config = $this->loadConfig($this->config_dir);
 		$this->routes = $this->loadRoute($this->config_dir);
@@ -252,7 +246,7 @@ class kernel
 				'assets'    => '/',
 			),
 			'paths' => array(
-				'root'    => realpath(__DIR__ . '/../'),
+				'root'    => realpath($dir . '/../'),
 				'config'  => 'config',
 				'modules' => 'modules',
 				'routes'  => 'routes',
@@ -261,6 +255,7 @@ class kernel
 				'data'    => 'data',
 				'tmp'     => '/tmp',
 				'web'     => 'web',
+				'log'     => 'log',
 			),
 		);
 		$values = self::mergeArrayRecursive($default_config, $values);
@@ -1157,6 +1152,7 @@ class kernel
 			'{path:data}',
 			'{path:tmp}',
 			'{path:web}',
+			'{path:log}',
 			'{session:username}',
 			'{session:lang}',
 			'{url:base}',
@@ -1181,6 +1177,7 @@ class kernel
 			$this->config['paths']['data'],
 			$this->config['paths']['tmp'],
 			$this->config['paths']['web'],
+			$this->config['paths']['log'],
 			$username,
 			$this->lang,
 			$this->config['urls']['base'],
@@ -1519,7 +1516,7 @@ class kernel
 		else if ($logfile === null)
 		{
 			/* only use default logfile if nothing/null was defined in configuration */
-			$logfile = __DIR__ . '/' . FILENAME_LOG_KERNEL;
+			$logfile = $kernel->expand('{path:log}') . '/' . FILENAME_LOG_KERNEL;
 		}
 		/* write to log only if logfile is valid */
 		if ($logfile)
