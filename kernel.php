@@ -8,6 +8,7 @@ define('ROUTE_KEY_METHOD405', 'method405');
 define('ROUTE_KEY_FORMAT', 'format');
 define('ROUTE_KEY_ACCESS', 'access');
 
+define('CONTROLLER_CLASS_BASE', 'Core\Controller');
 define('CONTROLLER_ACTION_EXTENSION', 'Action');
 define('CONTROLLER_CLASS_POSTFIX', 'Controller');
 
@@ -125,7 +126,7 @@ class kernel
 		if (!isset($_SERVER['REQUEST_METHOD']))
 		{
 			/* setup session */
-			$this->session = new Session();
+			$this->session = new Core\Session();
 			return true;
 		}
 
@@ -170,7 +171,7 @@ class kernel
 		}
 
 		/* setup session */
-		$this->session = new Session();
+		$this->session = new Core\Session();
 		/* get user language, if authenticated */
 		$user = $this->session->getUser();
 		if ($user)
@@ -214,12 +215,12 @@ class kernel
 		$config_local_file = realpath($dir . '/' . FILENAME_CONFIG_LOCAL);
 		if ($config_file === false)
 		{
-			throw new Exception('Kernel configuration file not found.');
+			throw new Exception('Kernel configuration file not found: ' . $config_file);
 		}
 		$values = yaml_parse_file($config_file);
 		if ($values === false)
 		{
-			throw new Exception('Kernel configuration file could not be parsed.');
+			throw new Exception('Kernel configuration file could not be parsed: ' . $config_file);
 		}
 		if ($config_local_file)
 		{
@@ -983,22 +984,7 @@ class kernel
 
 	public function loadModule($module)
 	{
-		if (strpos($module, '\\') !== false)
-		{
-			$file = str_replace('\\', '/', $module) . '.php';
-			require_once $file;
-		}
-		if (false !== strpos($module, 'Exception'))
-		{
-			$class = $this->config['modules']['Exceptions'];
-			if (isset($class['class']))
-			{
-				$class = $class['class'];
-			}
-			$file = $this->expand('{path:modules}/' . $class . '.php');
-			require_once $file;
-		}
-		else if (isset($this->config['modules'][$module]))
+		if (isset($this->config['modules'][$module]))
 		{
 			$class = $this->config['modules'][$module];
 			if (isset($class['class']))
