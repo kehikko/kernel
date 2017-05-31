@@ -1462,6 +1462,7 @@ class kernel
 		{
 			$config->setQueryCacheImpl($cache_instance);
 			$config->setResultCacheImpl($cache_instance);
+			$config->setMetadataCacheImpl($cache_instance);
 		}
 
 		$this->entityManager = Doctrine\ORM\EntityManager::create($settings, $config);
@@ -1811,9 +1812,9 @@ class kernel
 
 		if ($type == 'phpfastcache')
 		{
-			phpFastCache\CacheManager::setup($config);
-			phpFastCache\CacheManager::CachingMethod('phpfastcache');
-			$this->cache = phpFastCache\CacheManager::getInstance();
+			$driver = isset($this->config['cache']['driver']) ? $this->config['cache']['type'] : 'files';
+			phpFastCache\CacheManager::setDefaultConfig($config);
+			$this->cache = phpFastCache\CacheManager::getInstance($driver);
 		}
 
 		return $this->cache;
@@ -1822,25 +1823,28 @@ class kernel
 	/**
 	 * Parse YAML file, with caching.
 	 */
-	public static function yaml_read($file, $ttl = 5)
+	public static function yaml_read($file, $ttl = 600)
 	{
 		/* expands all symbolic links and resolves references */
-		$file = realpath($file);
+		$file_real = realpath($file);
+		if (!$file_real)
+		{
+			/* file does not exist */
+			return false;
+		}
 		/* check cache */
 		$cache      = $ttl > 0 ? kernel::getInstance()->getCacheInstance() : null;
 		$cache_item = null;
 		if ($cache)
 		{
-			$cache_item = $cache->getItem($file);
-			kernel::log(LOG_DEBUG, 'trying yaml file from cache: ' . $file);
+			$cache_item = $cache->getItem(hash('sha512', $file_real));
 			if ($cache_item->isHit())
 			{
-				kernel::log(LOG_DEBUG, 'yaml file from cache: ' . $file);
 				return $cache_item->get();
 			}
 		}
 		/* read file contents and parse */
-		$data = @file_get_contents($file);
+		$data = @file_get_contents($file_real);
 		if ($data === false)
 		{
 			return false;
@@ -1866,20 +1870,20 @@ class kernel
 	 */
 	public static function yaml_write($file, $data)
 	{
-		/* expands all symbolic links and resolves references */
-		$file = realpath($file);
-		/* delete from cache */
-		$cache = kernel::getInstance()->getCacheInstance();
-		if ($cache)
-		{
-
-		}
 		/* dump data */
 		$data = Symfony\Component\Yaml\Yaml::dump($data);
 		/* write data */
 		if (@file_put_contents($file, $data) === false)
 		{
 			return false;
+		}
+		/* expands all symbolic links and resolves references */
+		$file_real = realpath($file);
+		/* delete old entry from cache */
+		$cache = kernel::getInstance()->getCacheInstance();
+		if ($cache && $file_real)
+		{
+			$cache->deleteItem(hash('sha512', $file_real));
 		}
 		return true;
 	}
