@@ -119,7 +119,7 @@ class kernel
 	{
 		$this->config_dir = realpath($config_dir);
 
-		$this->config = $this->loadConfig($this->config_dir);
+		$this->config = $this->loadConfig($this->config_dir, false);
 		$this->routes = $this->loadRoute($this->config_dir);
 
 		/* exit if kernel was created at command line */
@@ -209,7 +209,7 @@ class kernel
 		return $controller;
 	}
 
-	private function loadConfig($dir)
+	private function loadConfig($dir, $cache_ttl = 600)
 	{
 		$config_file       = realpath($dir . '/' . FILENAME_CONFIG);
 		$config_local_file = realpath($dir . '/' . FILENAME_CONFIG_LOCAL);
@@ -217,14 +217,14 @@ class kernel
 		{
 			throw new Exception('Kernel configuration file not found: ' . $config_file);
 		}
-		$values = yaml_parse_file($config_file);
+		$values = $this->yaml_read($config_file, $cache_ttl);
 		if ($values === false)
 		{
 			throw new Exception('Kernel configuration file could not be parsed: ' . $config_file);
 		}
 		if ($config_local_file)
 		{
-			$values_local = @yaml_parse_file($config_local_file);
+			$values_local = $this->yaml_read($config_local_file, $cache_ttl);
 			if ($values_local !== false)
 			{
 				$values = self::mergeArrayRecursive($values, $values_local);
@@ -826,13 +826,13 @@ class kernel
 
 	public function loadRoute($route_file_path)
 	{
-		$routes = @yaml_parse_file($route_file_path . '/' . FILENAME_ROUTE);
+		$routes = $this->yaml_read($route_file_path . '/' . FILENAME_ROUTE);
 		if (!is_array($routes))
 		{
 			$this->log(LOG_ERR, 'Route file could not be parsed: ' . $route_file_path . '/' . FILENAME_ROUTE);
 			return false;
 		}
-		$routes_local = @yaml_parse_file($route_file_path . '/' . FILENAME_ROUTE_LOCAL);
+		$routes_local = $this->yaml_read($route_file_path . '/' . FILENAME_ROUTE_LOCAL);
 		if ($routes_local)
 		{
 			$routes = array_merge($routes, $routes_local);
@@ -853,7 +853,7 @@ class kernel
 		$config_file = $route_file_path . '/' . FILENAME_CONFIG;
 		if (is_file($config_file))
 		{
-			$config = @yaml_parse_file($config_file);
+			$config = $this->yaml_read($config_file);
 			if ($config === false)
 			{
 				throw new Exception500('Route config file could not be parsed: ' . $route_file_path . '/' . FILENAME_CONFIG);
@@ -868,7 +868,7 @@ class kernel
 		$config_file = $route_file_path . '/' . $config_file;
 		if (is_file($config_file))
 		{
-			$config = @yaml_parse_file($config_file);
+			$config = $this->yaml_read($config_file);
 			if ($config === false)
 			{
 				throw new Exception500('Custom route config file could not be parsed: ' . $config_file);
@@ -931,7 +931,7 @@ class kernel
 			$local_file = $route['path'] . '/' . FILENAME_TRANSLATIONS;
 			if (is_file($local_file))
 			{
-				$tr = @yaml_parse_file($local_file);
+				$tr = $this->yaml_read($local_file);
 				if (!$tr)
 				{
 					continue;
@@ -1421,14 +1421,47 @@ class kernel
 					}
 				}
 			}
+		}
 
-			/* setup doctrine and return entity manager */
-			$config = Doctrine\ORM\Tools\Setup::createYAMLMetadataConfiguration($directories, $this->debug());
-			$config->setProxyDir($this->expand('{path:tmp}') . '/doctrine');
-			if ($this->debug())
-			{
-				$config->setAutoGenerateProxyClasses(true);
-			}
+		/* setup doctrine and return entity manager */
+		$config = Doctrine\ORM\Tools\Setup::createYAMLMetadataConfiguration($directories, $this->debug());
+		$config->setProxyDir($this->expand('{path:tmp}') . '/doctrine');
+		if ($this->debug())
+		{
+			$config->setAutoGenerateProxyClasses(true);
+		}
+		/* caching */
+		$cache_instance = null;
+		$cache_type     = $this->getConfigValue('doctrine', 'cache', 'type');
+		if ($cache_type == 'memcache')
+		{
+			$memcache = new Memcache();
+			$memcache->connect(
+				$this->getConfigValue('doctrine', 'cache', 'host'),
+				$this->getConfigValue('doctrine', 'cache', 'port')
+			);
+			$cache_instance = new \Doctrine\Common\Cache\MemcacheCache();
+			$cache_instance->setMemcache($memcache);
+		}
+		else if ($cache_type == 'memcached')
+		{
+			$memcache = new Memcached();
+			$memcache->addServer(
+				$this->getConfigValue('doctrine', 'cache', 'host'),
+				$this->getConfigValue('doctrine', 'cache', 'port')
+			);
+			$cache_instance = new \Doctrine\Common\Cache\MemcachedCache();
+			$cache_instance->setMemcached($memcache);
+		}
+		else if ($cache_type == 'xcache')
+		{
+			$cache_instance = new \Doctrine\Common\Cache\XcacheCache();
+		}
+		/* set cache instance to be used by doctrine */
+		if ($cache_instance)
+		{
+			$config->setQueryCacheImpl($cache_instance);
+			$config->setResultCacheImpl($cache_instance);
 		}
 
 		$this->entityManager = Doctrine\ORM\EntityManager::create($settings, $config);
@@ -1761,7 +1794,6 @@ class kernel
 		{
 			return null;
 		}
-
 		$type   = strtolower($this->config['cache']['type']);
 		$config = array();
 		if (isset($this->config['cache']['config']))
@@ -1786,10 +1818,69 @@ class kernel
 
 		return $this->cache;
 	}
-}
 
-/* yaml parsing using symfony yaml */
-if (!function_exists('yaml_parse_file'))
-{
-	include __DIR__ . '/yaml-symfony.php';
+	/**
+	 * Parse YAML file, with caching.
+	 */
+	public static function yaml_read($file, $ttl = 5)
+	{
+		/* expands all symbolic links and resolves references */
+		$file = realpath($file);
+		/* check cache */
+		$cache      = $ttl > 0 ? kernel::getInstance()->getCacheInstance() : null;
+		$cache_item = null;
+		if ($cache)
+		{
+			$cache_item = $cache->getItem($file);
+			kernel::log(LOG_DEBUG, 'trying yaml file from cache: ' . $file);
+			if ($cache_item->isHit())
+			{
+				kernel::log(LOG_DEBUG, 'yaml file from cache: ' . $file);
+				return $cache_item->get();
+			}
+		}
+		/* read file contents and parse */
+		$data = @file_get_contents($file);
+		if ($data === false)
+		{
+			return false;
+		}
+		try
+		{
+			$data = Symfony\Component\Yaml\Yaml::parse($data);
+		}
+		catch (Exception $e)
+		{
+			return false;
+		}
+		if ($cache_item)
+		{
+			$cache_item->set($data)->expiresAfter($ttl);
+			$cache->save($cache_item);
+		}
+		return $data;
+	}
+
+	/**
+	 * Write to YAML file.
+	 */
+	public static function yaml_write($file, $data)
+	{
+		/* expands all symbolic links and resolves references */
+		$file = realpath($file);
+		/* delete from cache */
+		$cache = kernel::getInstance()->getCacheInstance();
+		if ($cache)
+		{
+
+		}
+		/* dump data */
+		$data = Symfony\Component\Yaml\Yaml::dump($data);
+		/* write data */
+		if (@file_put_contents($file, $data) === false)
+		{
+			return false;
+		}
+		return true;
+	}
 }
