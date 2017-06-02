@@ -7,7 +7,6 @@
 		"name": "Antti Partanen",
 		"email": "aehparta@iki.fi"
 	}],
-	"minimum-stability": "dev",
 	"require":
 	{
 		"php": ">=7.0.0"
