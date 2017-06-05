@@ -1513,6 +1513,17 @@ class kernel
 			return $message;
 		}
 
+		$levels = array(
+			LOG_EMERG   => 'EMERGENCY',
+			LOG_ALERT   => 'ALERT',
+			LOG_CRIT    => 'CRITICAL',
+			LOG_ERR     => 'ERROR',
+			LOG_WARNING => 'WARNING',
+			LOG_NOTICE  => 'NOTICE',
+			LOG_INFO    => 'INFO',
+			LOG_DEBUG   => 'DEBUG',
+		);
+
 		$time    = time();
 		$address = 'console';
 		$port    = 0;
@@ -1526,6 +1537,7 @@ class kernel
 		{
 			$session_id = 'anonymous';
 		}
+		$msg_str = $levels[$level] . ' ' . $message;
 
 		$logfile = $kernel->getConfigValue('log', 'file');
 		if ($logfile)
@@ -1544,17 +1556,7 @@ class kernel
 			$f = @fopen($logfile, 'a');
 			if ($f)
 			{
-				$levels = array(
-					LOG_EMERG   => 'EMERGENCY',
-					LOG_ALERT   => 'ALERT',
-					LOG_CRIT    => 'CRITICAL',
-					LOG_ERR     => 'ERROR',
-					LOG_WARNING => 'WARNING',
-					LOG_NOTICE  => 'NOTICE',
-					LOG_INFO    => 'INFO',
-					LOG_DEBUG   => 'DEBUG',
-				);
-				fwrite($f, date('Y-m-d H:i:s', $time) . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $levels[$level] . ' ' . $message . "\n");
+				fwrite($f, date('Y-m-d H:i:s', $time) . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $msg_str . "\n");
 				fclose($f);
 			}
 			else
@@ -1562,7 +1564,11 @@ class kernel
 				error_log('failed to open log file: ' . $logfile);
 			}
 		}
-
+		/* echo if using console */
+		if ($address == 'console')
+		{
+			echo $msg_str . "\n";
+		}
 		/* save log entries for sending them later if enabled in configuration */
 		if ($kernel->getConfigValue('log', 'send') === true)
 		{
