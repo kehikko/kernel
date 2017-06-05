@@ -22,46 +22,6 @@ $commands = array(
 	'update:assets' => array('description' => 'update public assets to web/-directory from routes'),
 	'update:cache'  => array('description' => 'update cached files like css and javascript'),
 	'route:add'     => array('description' => 'add new route and create base directories and files for it'),
-	'user'          => array(
-		'description' => 'Modify users.',
-		'arguments'   => array(
-			'username' => array(
-				'description' => 'username',
-			),
-		),
-		'options'     => array(
-			'password'      => array(
-				'short_name'  => '-p',
-				'description' => 'new password',
-				'action'      => 'Password',
-			),
-			'create'        => array(
-				'short_name'  => '-c',
-				'description' => 'create user',
-				'action'      => 'StoreTrue',
-			),
-			'delete'        => array(
-				'short_name'  => '-d',
-				'description' => 'delete user',
-				'action'      => 'StoreTrue',
-			),
-			'authenticator' => array(
-				'short_name'  => '-a',
-				'description' => 'authenticator class for this user',
-				'action'      => 'StoreString',
-			),
-			'role_add'      => array(
-				'short_name'  => '-r',
-				'description' => 'add role',
-				'action'      => 'StoreString',
-			),
-			'role_remove'   => array(
-				'short_name'  => '-R',
-				'description' => 'remove role',
-				'action'      => 'StoreString',
-			),
-		),
-	),
 	'cron'          => array('description' => 'execute cron jobs'),
 );
 
@@ -69,14 +29,14 @@ $commands = array(
 $kernel = kernel::getInstance();
 $kernel->load(getcwd() . '/config/');
 
-/* authenticate console actions as default to this user */
+/* authenticate console actions as default to this account */
 $username = $kernel->getConfigValue('console', 'username');
 if ($username)
 {
-	/* authenticate cron actions to this user */
+	/* authenticate cron actions to this account */
 	if (!$kernel->session->authenticate($username, false))
 	{
-		echo 'Default console user not found: ' . $username . "\n";
+		kernel::log(LOG_ERR, 'Default console account not found: ' . $username);
 		exit(1);
 	}
 }
@@ -112,6 +72,17 @@ if (is_array($modules))
 		}
 	}
 }
+$vendor_path     = realpath(__DIR__ . '/../');
+$vendor_packages = scandir($vendor_path);
+foreach ($vendor_packages as $pkg)
+{
+	$path = $vendor_path . '/' . $pkg;
+	if (!is_dir($path) || $pkg[0] == '.')
+	{
+		continue;
+	}
+	$module_paths[$pkg] = $path;
+}
 $console_configs = array();
 foreach ($module_paths as $subpath => $path)
 {
@@ -123,7 +94,7 @@ foreach ($module_paths as $subpath => $path)
 	$data = kernel::yaml_read($module_config);
 	if (!$data)
 	{
-		echo 'Invalid console config file: ' . $module_config . "\n";
+		kernel::log(LOG_ERR, 'Invalid console config file: ' . $module_config);
 		continue;
 	}
 	$console_configs[$subpath] = $data;
@@ -205,7 +176,7 @@ if (isset($module_commands[$command]))
 	$mcmd = $module_commands[$command];
 	if (!isset($mcmd['class']) || !isset($mcmd['method']))
 	{
-		echo 'Missing class or method from command definition: ' . $command . "\n";
+		kernel::log(LOG_ERR, 'Missing class or method from command definition: ' . $command);
 		exit(1);
 	}
 	$class  = $mcmd['class'];
@@ -242,7 +213,7 @@ else if ($command == 'update:cache')
 		$f        = fopen($filename, 'w');
 		if (!$f)
 		{
-			echo "Cannot open destination cache file for writing, filename: $filename\n";
+			kernel::log(LOG_ERR, 'Cannot open destination cache file for writing, filename: ' . $filename);
 			exit(1);
 		}
 
@@ -345,101 +316,19 @@ else if ($command == 'update:cache')
 		}
 	}
 }
-else if ($command == 'route:add')
-{
-	echo "not done yet.\n";
-}
-else if ($command == 'user')
-{
-	$username = $args['username'];
-
-	/* find class */
-	$usertype = null;
-	if ($options['authenticator'])
-	{
-		$usertype = $options['authenticator'];
-	}
-	else
-	{
-		$authenticators = $kernel->getConfigValue('modules', 'Session', 'authenticators');
-		if (count($authenticators) > 0)
-		{
-			$usertype = $authenticators[0];
-		}
-	}
-
-	if (!class_exists($usertype))
-	{
-		echo "Invalid user authenticator class.\n";
-		exit(1);
-	}
-
-	/* find or create user */
-	$user = null;
-	if ($options['create'])
-	{
-		$user = new $usertype();
-		$user = $user->create($username);
-		if (!$user)
-		{
-			echo "Failed to create new user.\n";
-			exit(1);
-		}
-		echo "New user created.\n";
-	}
-	else
-	{
-		$user = new $usertype($username);
-	}
-
-	if (!$user)
-	{
-		echo "User not found.\n";
-		exit(1);
-	}
-
-	/* delete user */
-	if ($options['delete'])
-	{
-		$user->delete();
-		echo "User deleted.\n";
-		exit(0);
-	}
-
-	/* set password */
-	if ($options['password'])
-	{
-		$user->setPassword($options['password']);
-		echo "Password set.\n";
-	}
-
-	/* add role */
-	if ($options['role_add'])
-	{
-		$user->addRole($options['role_add']);
-		echo "Role added.\n";
-	}
-
-	/* remove role */
-	if ($options['role_remove'])
-	{
-		$user->removeRole($options['role_remove']);
-		echo "Role removed.\n";
-	}
-}
 else if ($command == 'cron')
 {
 	$username = $kernel->getConfigValue('cron', 'username');
 	if ($username)
 	{
-		/* authenticate cron actions to this user */
+		/* authenticate cron actions to this account */
 		if (!$kernel->session->authenticate($username, false))
 		{
-			echo "User not found.\n";
+			kernel::log(LOG_ERR, 'Account not found: ' . $username);
 			exit(1);
 		}
 	}
-	$kernel->log(LOG_INFO, 'Executing cron jobs.' . (!empty($username) ? ' (username: ' . $username . ')' : ''));
+	kernel::log(LOG_INFO, 'Executing cron jobs.' . (!empty($username) ? ' (username: ' . $username . ')' : ''));
 	$modules     = $kernel->getConfigValue('cron', 'modules');
 	$modules_due = array();
 	if (is_array($modules))
@@ -473,17 +362,13 @@ else if ($command == 'cron')
 			{
 				$method = $module['method'];
 			}
-			$kernel->log(LOG_INFO, 'cron:module:' . $module['class'] . ':' . $method);
+			kernel::log(LOG_INFO, 'cron:module:' . $module['class'] . ':' . $method);
 			if ($module['class']::$method() === false)
 			{
-				$kernel->log(LOG_ERR, 'Cron job failed: ' . $module['class'] . ':' . $method);
+				kernel::log(LOG_ERR, 'Cron job failed: ' . $module['class'] . ':' . $method);
 			}
 		}
 	}
-}
-else
-{
-	help();
 }
 
 exit(0);
