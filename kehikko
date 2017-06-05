@@ -1,5 +1,5 @@
 #!/usr/bin/env php
 <?php
 
-include('cmd.php');
+include('kehikko.php');
 

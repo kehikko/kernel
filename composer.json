@@ -11,7 +11,7 @@
 	{
 		"php": ">=7.0.0"
 	},
-	"bin": ["cmd", "cmd.php"],
+	"bin": ["kehikko", "kehikko.php"],
 	"autoload":
 	{
 		"psr-0":
