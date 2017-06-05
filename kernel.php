@@ -1666,14 +1666,16 @@ class kernel
 	 * @param  string $message Message to log.
 	 * @return string Will always return the message given.
 	 */
-	public function msg($tag, $message)
+	public static function msg($tag, $message)
 	{
+		$kernel = kernel::getInstance();
+
 		if (is_object($message))
 		{
 			$message = $message->getError();
 		}
 
-		$messages = $this->session->get('kernel:messages');
+		$messages = $kernel->session->get('kernel:messages');
 		if (!is_array($messages))
 		{
 			$messages = array();
@@ -1691,7 +1693,7 @@ class kernel
 		}
 
 		/* save to session for later use */
-		$this->session->set('kernel:messages', $messages);
+		$kernel->session->set('kernel:messages', $messages);
 
 		return $message;
 	}
