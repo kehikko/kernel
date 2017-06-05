@@ -1253,22 +1253,20 @@ class kernel
 
 	public function getModuleValue($module)
 	{
-		/* find module configuration, if it exists */
 		if (!isset($this->config['modules'][$module]))
 		{
-			throw new Exception500('Trying to get non-existing config for module ' . $module);
+			/* module does not have any configuration available */
+			return null;
 		}
+		/* module configuration exists */
 		$value = $this->config['modules'][$module];
-
 		/* get count of arguments */
 		$argn = func_num_args();
-
 		/* if everything should be returned */
 		if ($argn < 2)
 		{
 			return $value;
 		}
-
 		/* find value that was asked, if given */
 		$argv = func_get_args();
 		array_shift($argv);
@@ -1283,7 +1281,6 @@ class kernel
 				$value = null;
 			}
 		}
-
 		return $value;
 	}
 
