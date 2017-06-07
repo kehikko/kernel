@@ -788,7 +788,7 @@ class kernel
 					}
 					else
 					{
-						throw new Exception500($msg);
+						throw new Exception500('slug did not match: ' . $slug['slug']);
 					}
 				}
 			}
