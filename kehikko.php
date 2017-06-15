@@ -19,9 +19,9 @@ foreach ($autoloadFiles as $autoloadFile)
 
 /* commands */
 $commands = array(
-	'update:assets' => array('description' => 'update public assets to web/-directory from routes'),
-	'update:cache'  => array('description' => 'update cached files like css and javascript'),
-	'route:add'     => array('description' => 'add new route and create base directories and files for it'),
+	'assets:update' => array('description' => 'update public assets to web/-directory from routes'),
+	'cache:clean'   => array('description' => 'clean cache (kernel, doctrine, etc)'),
+	'cache:update'  => array('description' => 'update cached files like css and javascript'),
 	'cron'          => array('description' => 'execute cron jobs'),
 );
 
@@ -186,7 +186,7 @@ if (isset($module_commands[$command]))
 }
 
 /* execute action */
-if ($command == 'update:assets')
+if ($command == 'assets:update')
 {
 	$routes = $kernel->getRoutes();
 	foreach ($routes as $route => $config)
@@ -201,8 +201,13 @@ if ($command == 'update:assets')
 		}
 	}
 }
-else if ($command == 'update:cache')
+else if ($command == 'cache:clean')
 {
+	throw new Exception501();
+}
+else if ($command == 'cache:update')
+{
+	throw new Exception501();
 	$webdir = $kernel->expand('{path:web}');
 
 	/* javascript */
