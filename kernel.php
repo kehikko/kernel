@@ -907,7 +907,7 @@ class kernel
 		{
 			throw new Exception500('Render failed.');
 		}
-		else
+		else if (!in_array($this->method, array('head', 'options')))
 		{
 			echo $r;
 		}
