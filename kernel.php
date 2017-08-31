@@ -800,7 +800,7 @@ class kernel
 
 		$ret    = '/' . implode('/', $filled);
 		$format = strrchr($filled[count($filled) - 1], '.');
-		if (substr($url, -1) == '/' && $ret != '/' && !$format)
+		if (substr($url, -1) == '/' && $ret != '/' && !$format && substr($ret, -1) != '/')
 		{
 			$ret .= '/';
 		}
