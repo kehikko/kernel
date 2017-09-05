@@ -58,6 +58,11 @@ class kernel
 	private $entityManager = null;
 
 	/**
+	 * @var mixed Doctrine document manager.
+	 */
+	private $documentManager = null;
+
+	/**
 	 * @var array List of temporary files to be deleted at exit.
 	 */
 	private $shutdown_delete_files = array();
@@ -1366,7 +1371,11 @@ class kernel
 		}
 
 		/* get doctrine settings */
-		$settings = $this->getConfigValue('doctrine');
+		$settings = $this->getConfigValue('doctrine', 'sql');
+		if (!$settings)
+		{
+			$settings = $this->getConfigValue('doctrine');
+		}
 		if (!$settings)
 		{
 			$this->entityManager = false;
@@ -1465,6 +1474,92 @@ class kernel
 		$this->entityManager = Doctrine\ORM\EntityManager::create($settings, $config);
 
 		return $this->entityManager;
+	}
+
+	public function getDocumentManager()
+	{
+		/* if document manager has already been loaded */
+		if ($this->documentManager !== null)
+		{
+			return $this->documentManager;
+		}
+
+		/* get doctrine settings */
+		$settings = $this->getConfigValue('doctrine', 'mongodb');
+		if (!$settings)
+		{
+			$this->documentManager = false;
+			return false;
+		}
+
+		/* find doctrine definition directories from modules */
+		$directories  = array();
+		$modules_path = $this->expand('{path:modules}');
+
+		/* expand possible modules that override default directory search behaviour */
+		if (isset($settings['modules']))
+		{
+			foreach ($settings['modules'] as $module)
+			{
+				$doctrine_path = $modules_path . '/' . $module . '/mongodb';
+				if (is_dir($doctrine_path))
+				{
+					$directories[] = $doctrine_path;
+				}
+			}
+		}
+		else
+		{
+			$modules = $this->getConfigValue('modules');
+			foreach ($modules as $module)
+			{
+				$module_file = null;
+				if (is_string($module))
+				{
+					$module_file = $module;
+				}
+				else
+				{
+					$module_file = $module['class'];
+				}
+				$module_doctrine_path = dirname($modules_path . '/' . $module_file) . '/mongodb';
+				if (is_dir($module_doctrine_path))
+				{
+					$directories[] = $module_doctrine_path;
+				}
+			}
+		}
+
+		/* setup doctrine and return document manager */
+		$config = new Doctrine\ODM\MongoDB\Configuration();
+		$driver = new Doctrine\ODM\MongoDB\Mapping\Driver\YamlDriver($directories);
+		// $driver->registerAnnotationClasses();
+		$config->setMetadataDriverImpl($driver);
+		$config->setProxyDir($this->expand('{path:tmp}') . '/mongodb/proxies');
+		$config->setProxyNamespace('Proxies');
+		$config->setHydratorDir($this->expand('{path:tmp}') . '/mongodb/hydrators');
+		$config->setHydratorNamespace('Hydrators');
+
+		if ($this->debug())
+		{
+			$config->setAutoGenerateProxyClasses(true);
+		}
+
+		$server = 'mongodb://localhost:27017';
+		if (isset($settings['server']))
+		{
+			$server = $settings['server'];
+		}
+
+		if (isset($settings['dbname']))
+		{
+			$config->setDefaultDB($settings['dbname']);
+		}
+
+		$connection            = new Doctrine\MongoDB\Connection($server);
+		$this->documentManager = Doctrine\ODM\MongoDB\DocumentManager::create($connection, $config);
+
+		return $this->documentManager;
 	}
 
 	/* recursive function for searching doctrine database definitions */
