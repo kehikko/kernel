@@ -821,9 +821,30 @@ class kernel
 		/* check access rights */
 		if (isset($route[ROUTE_KEY_ACCESS]))
 		{
-			if (!$this->session->authorize($route[ROUTE_KEY_ACCESS]))
+			$access       = $route[ROUTE_KEY_ACCESS];
+			$access_level = null;
+			$code         = 403;
+			if (is_string($access))
 			{
-				throw new Exception403('Access denied.');
+				/* simple string as authorization key */
+				$access_level = $access;
+			}
+			else if (is_array($access) && isset($access[$this->method]))
+			{
+				/* more complex way for authorization based on method */
+				$access_level = $access[$this->method];
+				/* deny code manually defined */
+				if (isset($access['deny']))
+				{
+					$code = intval($access['deny']);
+				}
+			}
+			/* if code was invalid previously, correct here back to default */
+			$code = $code < 100 ? 403 : $code;
+			/* try to authorize */
+			if (!$access_level || !$this->session->authorize($access_level))
+			{
+				throw new Exception('Access denied.', $code);
 			}
 		}
 		return true;
