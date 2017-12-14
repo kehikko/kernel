@@ -7,6 +7,7 @@ define('ROUTE_KEY_METHOD', 'method');
 define('ROUTE_KEY_METHOD405', 'method405');
 define('ROUTE_KEY_FORMAT', 'format');
 define('ROUTE_KEY_ACCESS', 'access');
+define('ROUTE_KEY_ACCESS_DENY_CODE', 'deny-code');
 
 define('CONTROLLER_CLASS_BASE', 'Core\Controller');
 define('CONTROLLER_ACTION_EXTENSION', 'Action');
@@ -823,42 +824,21 @@ class kernel
 		{
 			return true;
 		}
-		/* default code */
-		$code = 403;
 		/* check access rights */
-		$access        = $route[ROUTE_KEY_ACCESS];
-		$access_levels = null;
-		if (is_string($access))
+		if ($this->session->authorize($route[ROUTE_KEY_ACCESS]))
 		{
-			/* simple string as authorization key */
-			$access_levels = $access;
+			return true;
 		}
-		else if (is_array($access) && isset($access[$this->method]))
+		/* get deny code */
+		$code = 403;
+		if (isset($route[ROUTE_KEY_ACCESS][ROUTE_KEY_ACCESS_DENY_CODE]))
 		{
-			/* more complex way for authorization based on method */
-			$access_levels = $access[$this->method];
+			$code = intval($route[ROUTE_KEY_ACCESS][ROUTE_KEY_ACCESS_DENY_CODE]);
 		}
-		/* list all possible authorization levels */
-		$list = explode(',', $access_levels);
-		/* check if last entry is http code */
-		$code = intval(end($list));
-		if ($code >= 100 && $code <= 599)
+		if ($code < 100 || $code > 599)
 		{
-			/* remove code from access list */
-			array_pop($list);
-		}
-		else
-		{
-			/* if code was invalid previously, correct here back to default */
+			/* default code */
 			$code = 403;
-		}
-		/* try to authorize, any single match is enough */
-		foreach ($list as $access_level)
-		{
-			if ($this->session->authorize($access_level))
-			{
-				return true;
-			}
 		}
 		/* add authentication header if 401 */
 		if ($code == 401)
