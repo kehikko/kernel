@@ -860,6 +860,12 @@ class kernel
 				return true;
 			}
 		}
+		/* add authentication header if 401 */
+		if ($code == 401)
+		{
+			header('WWW-Authenticate: Basic realm="Authentication Required"');
+		}
+		/* denied! */
 		throw new Exception('Access denied.', $code);
 	}
 
