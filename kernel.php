@@ -818,36 +818,49 @@ class kernel
 	 */
 	public function routeAuthorize($route)
 	{
-		/* check access rights */
-		if (isset($route[ROUTE_KEY_ACCESS]))
+		/* if access is not set, default is allow */
+		if (!isset($route[ROUTE_KEY_ACCESS]))
 		{
-			$access       = $route[ROUTE_KEY_ACCESS];
-			$access_level = null;
-			$code         = 403;
-			if (is_string($access))
-			{
-				/* simple string as authorization key */
-				$access_level = $access;
-			}
-			else if (is_array($access) && isset($access[$this->method]))
-			{
-				/* more complex way for authorization based on method */
-				$access_level = $access[$this->method];
-				/* deny code manually defined */
-				if (isset($access['deny']))
-				{
-					$code = intval($access['deny']);
-				}
-			}
+			return true;
+		}
+		/* default code */
+		$code = 403;
+		/* check access rights */
+		$access        = $route[ROUTE_KEY_ACCESS];
+		$access_levels = null;
+		if (is_string($access))
+		{
+			/* simple string as authorization key */
+			$access_levels = $access;
+		}
+		else if (is_array($access) && isset($access[$this->method]))
+		{
+			/* more complex way for authorization based on method */
+			$access_levels = $access[$this->method];
+		}
+		/* list all possible authorization levels */
+		$list = explode(',', $access_levels);
+		/* check if last entry is http code */
+		$code = intval(end($list));
+		if ($code >= 100 && $code <= 599)
+		{
+			/* remove code from access list */
+			array_pop($list);
+		}
+		else
+		{
 			/* if code was invalid previously, correct here back to default */
-			$code = $code < 100 ? 403 : $code;
-			/* try to authorize */
-			if (!$access_level || !$this->session->authorize($access_level))
+			$code = 403;
+		}
+		/* try to authorize, any single match is enough */
+		foreach ($list as $access_level)
+		{
+			if ($this->session->authorize($access_level))
 			{
-				throw new Exception('Access denied.', $code);
+				return true;
 			}
 		}
-		return true;
+		throw new Exception('Access denied.', $code);
 	}
 
 	public function loadRoute($route_file_path)
