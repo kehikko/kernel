@@ -1967,6 +1967,7 @@ class kernel
 		$data = @file_get_contents($file_real);
 		if ($data === false)
 		{
+			kernel::log(LOG_ERR, 'unable to read yaml contents, file: ' . $file_real);
 			return false;
 		}
 		try
@@ -1975,6 +1976,7 @@ class kernel
 		}
 		catch (Exception $e)
 		{
+			kernel::log(LOG_ERR, 'unable to parse yaml contents, file: ' . $file_real . ', error: ' . $e->getMessage());
 			return false;
 		}
 		if ($cache_item)
