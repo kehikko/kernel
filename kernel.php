@@ -1016,16 +1016,24 @@ class kernel
 			{
 				$class = $class['class'];
 			}
-			$file = $this->expand('{path:modules}/' . $class . '.php');
-			if (file_exists($file))
+			if (is_string($class))
 			{
-				require_once $file;
+				$file = $this->expand('{path:modules}/' . $class . '.php');
+				if (file_exists($file))
+				{
+					require_once $file;
+				}
+				else
+				{
+					throw new Exception500('Module not found: ' . $module);
+				}
 			}
-			else
-			{
-				throw new Exception500('Module not found: ' . $module);
-			}
-			return;
+		}
+		/* try autoload namespaced class */
+		$file = $this->expand('{path:modules}/' . str_replace('\\', '/', $module) . '.php');
+		if (file_exists($file))
+		{
+			require_once $file;
 		}
 	}
 
