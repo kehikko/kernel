@@ -263,6 +263,7 @@ class kernel
 				'tmp'     => '/tmp',
 				'web'     => 'web',
 				'log'     => 'log',
+				'vendor'  => 'vendor',
 			),
 		);
 		$values = self::mergeArrayRecursive($default_config, $values);
@@ -1172,6 +1173,7 @@ class kernel
 			'{path:tmp}',
 			'{path:web}',
 			'{path:log}',
+			'{path:vendor}',
 			'{session:username}',
 			'{session:lang}',
 			'{url:base}',
@@ -1197,6 +1199,7 @@ class kernel
 			$this->config['paths']['tmp'],
 			$this->config['paths']['web'],
 			$this->config['paths']['log'],
+			$this->config['paths']['vendor'],
 			$username,
 			$this->lang,
 			$this->config['urls']['base'],
@@ -1419,40 +1422,45 @@ class kernel
 		/* find doctrine definition directories from modules */
 		$directories  = array();
 		$modules_path = $this->expand('{path:modules}');
+		$vendor_path  = $this->expand('{path:vendor}');
 
-		/* expand possible modules that override default directory search behaviour */
+		/* custom doctrine search paths */
 		if (isset($settings['modules']))
 		{
 			foreach ($settings['modules'] as $module)
 			{
-				$doctrine_path = $modules_path . '/' . $module . '/doctrine';
-				if (is_dir($doctrine_path))
+				$m_path = $modules_path . '/' . $module . '/doctrine';
+				$v_path = $vendor_path . '/' . $module . '/doctrine';
+				if (is_dir($m_path))
 				{
-					$directories[] = $doctrine_path;
+					$directories[] = $m_path;
+				}
+				else if (is_dir($v_path))
+				{
+					$directories[] = $v_path;
 				}
 			}
 		}
-		else
+
+		/* all modules are searched as default */
+		$modules = $this->getConfigValue('modules');
+		foreach ($modules as $module)
 		{
-			$modules = $this->getConfigValue('modules');
-			foreach ($modules as $module)
+			$module_file = null;
+			if (is_string($module))
 			{
-				$module_file = null;
-				if (is_string($module))
+				$module_file = $module;
+			}
+			else if (isset($module['class']))
+			{
+				$module_file = $module['class'];
+			}
+			if ($module_file)
+			{
+				$module_doctrine_path = dirname($modules_path . '/' . $module_file) . '/doctrine';
+				if (is_dir($module_doctrine_path))
 				{
-					$module_file = $module;
-				}
-				else if (isset($module['class']))
-				{
-					$module_file = $module['class'];
-				}
-				if ($module_file)
-				{
-					$module_doctrine_path = dirname($modules_path . '/' . $module_file) . '/doctrine';
-					if (is_dir($module_doctrine_path))
-					{
-						$directories[] = $module_doctrine_path;
-					}
+					$directories[] = $module_doctrine_path;
 				}
 			}
 		}
