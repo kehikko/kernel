@@ -13,13 +13,12 @@ define('CONTROLLER_CLASS_BASE', 'Core\Controller');
 define('CONTROLLER_ACTION_EXTENSION', 'Action');
 define('CONTROLLER_CLASS_POSTFIX', 'Controller');
 
-define('FILENAME_CONFIG', 'config.yaml');
-define('FILENAME_CONFIG_LOCAL', 'config-local.yaml');
-define('FILENAME_ROUTE', 'route.yaml');
-define('FILENAME_ROUTE_LOCAL', 'route-local.yaml');
-define('FILENAME_TRANSLATIONS', 'translations.yaml');
-define('FILENAME_CONFIG_CONSOLE', 'console.yaml');
-define('FILENAME_SVN_EXTERNALS', 'externals.svn');
+define('FILENAME_CONFIG', 'config.yml');
+define('FILENAME_CONFIG_LOCAL', 'config-local.yml');
+define('FILENAME_ROUTE', 'route.yml');
+define('FILENAME_ROUTE_LOCAL', 'route-local.yml');
+define('FILENAME_TRANSLATIONS', 'translations.yml');
+define('FILENAME_CONFIG_CONSOLE', 'console.yml');
 
 define('FILENAME_LOG_KERNEL', 'kernel.log');
 
@@ -217,24 +216,18 @@ class kernel
 
 	private function loadConfig($dir, $cache_ttl = 600)
 	{
-		$config_file       = realpath($dir . '/' . FILENAME_CONFIG);
-		$config_local_file = realpath($dir . '/' . FILENAME_CONFIG_LOCAL);
-		if ($config_file === false)
-		{
-			throw new Exception('Kernel configuration file not found: ' . $config_file);
-		}
+		$config_file       = $dir . '/' . FILENAME_CONFIG;
+		$config_local_file = $dir . '/' . FILENAME_CONFIG_LOCAL;
+
 		$values = $this->yaml_read($config_file, $cache_ttl);
 		if ($values === false)
 		{
 			throw new Exception('Kernel configuration file could not be parsed: ' . $config_file);
 		}
-		if ($config_local_file)
+		$values_local = $this->yaml_read($config_local_file, $cache_ttl);
+		if ($values_local !== false)
 		{
-			$values_local = $this->yaml_read($config_local_file, $cache_ttl);
-			if ($values_local !== false)
-			{
-				$values = self::mergeArrayRecursive($values, $values_local);
-			}
+			$values = self::mergeArrayRecursive($values, $values_local);
 		}
 
 		/* setup defaults, if something is not already set in config */
@@ -890,19 +883,11 @@ class kernel
 
 	public function loadRouteCustomConfig($route_file_path, $config_file)
 	{
-		$config      = array();
 		$config_file = $route_file_path . '/' . $config_file;
-		if (is_file($config_file))
+		$config      = $this->yaml_read($config_file);
+		if ($config === false)
 		{
-			$config = $this->yaml_read($config_file);
-			if ($config === false)
-			{
-				throw new Exception500('Custom route config file could not be parsed: ' . $config_file);
-			}
-		}
-		else
-		{
-			throw new Exception500('Custom route config file not found: ' . $config_file);
+			throw new Exception500('Custom route config file could not be parsed: ' . $config_file);
 		}
 		return $config;
 	}
@@ -1445,7 +1430,11 @@ class kernel
 		else if ($logfile === null)
 		{
 			/* only use default logfile if nothing/null was defined in configuration */
-			$logfile = $kernel->expand('{path:log}') . '/' . FILENAME_LOG_KERNEL;
+			$log_path = $kernel->expand('{path:log}');
+			if (is_dir($log_path))
+			{
+				$logfile = $log_path . '/' . FILENAME_LOG_KERNEL;
+			}
 		}
 		/* write to log only if logfile is valid */
 		if ($logfile)
@@ -1731,8 +1720,17 @@ class kernel
 		$file_real = realpath($file);
 		if (!$file_real)
 		{
-			/* file does not exist */
-			return false;
+			$info      = pathinfo($file);
+			$file_real = realpath($info['dirname'] . '/' . $info['filename'] . '.yaml');
+			if ($info['extension'] != 'yml' || !$file_real)
+			{
+				/* file does not exist */
+				return false;
+			}
+			else
+			{
+				kernel::log(LOG_NOTICE, 'file found with old .yaml extension, change to .yml for file: ' . $file_real);
+			}
 		}
 		/* check cache */
 		$cache      = $ttl > 0 ? kernel::getInstance()->getCacheInstance() : null;
