@@ -8,6 +8,7 @@ define('ROUTE_KEY_METHOD405', 'method405');
 define('ROUTE_KEY_FORMAT', 'format');
 define('ROUTE_KEY_ACCESS', 'access');
 define('ROUTE_KEY_ACCESS_DENY_CODE', 'deny-code');
+define('ROUTE_KEY_ACCESS_CUSTOM_CALL', 'call');
 
 define('CONTROLLER_CLASS_BASE', 'Core\Controller');
 define('CONTROLLER_ACTION_EXTENSION', 'Action');
@@ -102,7 +103,7 @@ class kernel
 	/**
 	 * Get kernel instance. Use this instead of new kernel().
 	 *
-	 * @return kernel-instance.
+	 * @return kernel instance
 	 */
 	public static function getInstance()
 	{
@@ -131,7 +132,7 @@ class kernel
 		if (!isset($_SERVER['REQUEST_METHOD']))
 		{
 			/* setup session */
-			$this->session = new Core\Session();
+			$this->session = \Core\Session::getInstance();
 			return true;
 		}
 
@@ -176,7 +177,7 @@ class kernel
 		}
 
 		/* setup session */
-		$this->session = new Core\Session();
+		$this->session = \Core\Session::getInstance();
 		/* get user language, if authenticated */
 		$user = $this->session->getUser();
 		if ($user)
@@ -434,10 +435,6 @@ class kernel
 			return $url;
 		}
 
-		/* check access rights */
-		$this->routeAuthorize($routebaseconfig);
-		$this->routeAuthorize($routeconfig);
-
 		/* do other error checking */
 		if (!isset($routeconfig[ROUTE_KEY_CONTROLLER]))
 		{
@@ -477,6 +474,10 @@ class kernel
 		{
 			$controller->setGet($get);
 		}
+
+		/* check access rights */
+		$this->routeAuthorize($routebaseconfig, $controller);
+		$this->routeAuthorize($routeconfig, $controller);
 
 		return $controller;
 	}
@@ -811,16 +812,38 @@ class kernel
 	/**
 	 * Try to authorize current session for use of given route.
 	 */
-	public function routeAuthorize($route)
+	public function routeAuthorize($route, $controller = null)
 	{
 		/* if access is not set, default is allow */
 		if (!isset($route[ROUTE_KEY_ACCESS]))
 		{
 			return true;
 		}
-		/* check access rights */
-		if ($this->session->authorize($route[ROUTE_KEY_ACCESS]))
+		/* check for custom authorization call */
+		if (isset($route[ROUTE_KEY_ACCESS][ROUTE_KEY_ACCESS_CUSTOM_CALL]))
 		{
+			$parts = explode(':', $route[ROUTE_KEY_ACCESS][ROUTE_KEY_ACCESS_CUSTOM_CALL], 2);
+			$controller->renderMethodResolve($args);
+			array_unshift($args, $controller);
+			$r = false;
+			if (count($parts) == 1)
+			{
+				$f = new ReflectionFunction($parts[0]);
+				$r = $f->invokeArgs($args);
+			}
+			else
+			{
+				$f = new ReflectionMethod($parts[0], $parts[1]);
+				$r = $f->invokeArgs(null, $args);
+			}
+			if ($r === true)
+			{
+				return true;
+			}
+		}
+		else if ($this->session->authorize($route[ROUTE_KEY_ACCESS]))
+		{
+			/* check access rights */
 			return true;
 		}
 		/* get deny code */
