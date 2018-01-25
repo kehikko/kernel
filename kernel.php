@@ -159,7 +159,7 @@ class kernel
 		}
 
 		/* PUT */
-		if ($this->method == 'put')
+		if ($this->method == 'put' || $this->method == 'post')
 		{
 			/* read PUT data from stdin */
 			if (($stream = fopen('php://input', 'r')) !== false)
