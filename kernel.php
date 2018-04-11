@@ -1493,7 +1493,7 @@ class kernel
         if (isset($this->config['cache']['config'])) {
             $config = $this->config['cache']['config'];
             if (isset($config['path'])) {
-                $config['path'] = $this->expand($config['path']);
+                $config['path'] = realpath($this->expand($config['path']));
             }
             if (!is_dir($config['path'])) {
                 throw new Exception500('Cache path ' . $config['path'] . ' does not exist.');
