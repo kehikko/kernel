@@ -504,7 +504,7 @@ class kernel
         if ($parts[0] == '') {
             /* special case for root url '/' */
             $path_rest = $path;
-            if (is_bool($path_rest) || count($path_rest) == 0) {
+            if ($path_rest == true || count($path_rest) == 0) {
                 return true;
             }
         } else {
