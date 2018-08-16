@@ -494,7 +494,6 @@ class kernel
                 return false;
             }
         }
-        $n_path  = count($path);
         $parts   = $this->routePartsGet($route[ROUTE_KEY_PATTERN]);
         $n_parts = count($parts);
         if ($n_parts < 1) {
@@ -505,7 +504,7 @@ class kernel
         if ($parts[0] == '') {
             /* special case for root url '/' */
             $path_rest = $path;
-            if (count($path_rest) == 0) {
+            if (is_bool($path_rest) || count($path_rest) == 0) {
                 return true;
             }
         } else {
