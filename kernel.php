@@ -327,12 +327,12 @@ class kernel
 
         list($routebase, $routebaseconfig, $routename, $routeconfig) = $this->routePath($route, $slugs);
 
-        if (isset($routeconfig['format'])) {
+        if (!$as_url && isset($routeconfig['format'])) {
             /* force response format */
             $this->format = $routeconfig['format'];
         }
 
-        if (isset($routeconfig['history']) && $routeconfig['history'] === false) {
+        if (!$as_url && isset($routeconfig['history']) && $routeconfig['history'] === false) {
             /* disable history */
             $this->historyDisable();
         }
@@ -494,7 +494,9 @@ class kernel
         if ($parts[0] == '') {
             /* special case for root url '/' */
             $path_rest = $path;
-            if ($path_rest == true || count($path_rest) == 0) {
+            if ($path_rest === true) {
+                /* just continue */
+            } else if ($path_rest === false || count($path_rest) == 0) {
                 return true;
             }
         } else {
