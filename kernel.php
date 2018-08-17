@@ -45,31 +45,21 @@ class kernel
     public $session = null;
     public $lang    = false;
 
-    private $config_dir   = false;
-    private $translations = array();
-    private $emitRecursionCounter = 0;
+    public $config_dir           = false;
+    public $translations         = array();
+    public $emitRecursionCounter = 0;
 
     /**
      * @var mixed Keep kernel cache instance here.
      */
-    private $cache = false;
-
-    /**
-     * @var mixed Doctrine entitymanager.
-     */
-    private $entityManager = null;
-
-    /**
-     * @var mixed Doctrine document manager.
-     */
-    private $documentManager = null;
+    public $cache = false;
 
     /**
      * @var array List of temporary files to be deleted at exit.
      */
-    private $shutdown_delete_files = array();
+    public $shutdown_delete_files = array();
 
-    private $historyDisabled = false;
+    public $historyDisabled = false;
 
     /**
      * Save log entries here if sending log is enabled in configuration.
@@ -876,16 +866,18 @@ class kernel
         $this->loadModule($module);
     }
 
-    public function url($path = false)
+    public static function url($path = false)
     {
+        $kernel = self::getInstance();
+
         if ($path === false) {
             /* return base url */
-            return $this->config['urls']['base'];
+            return $kernel->config['urls']['base'];
         } else if (is_string($path)) {
             /* return url for assets and such */
-            $base = $this->config['urls']['base'];
-            if (isset($this->config['urls']['assets'])) {
-                $base = $this->config['urls']['assets'];
+            $base = $kernel->config['urls']['base'];
+            if (isset($kernel->config['urls']['assets'])) {
+                $base = $kernel->config['urls']['assets'];
             }
             if (substr($base, -1) == '/') {
                 $base = substr($base, 0, -1);
@@ -909,19 +901,21 @@ class kernel
     /**
      * Return true if debug is on.
      */
-    public function debug()
+    public static function debug()
     {
-        return $this->config['setup']['debug'] ? true : false;
+        return self::getInstance()->getConfigValue('setup', 'debug') ? true : false;
     }
 
-    public function createTempFile($postfix = null)
+    public static function createTempFile($postfix = null)
     {
+        $kernel = self::getInstance();
+
         $path = sys_get_temp_dir();
-        if (isset($this->config['paths']['tmp'])) {
-            $path = $this->config['paths']['tmp'];
+        if (isset($kernel->config['paths']['tmp'])) {
+            $path = $kernel->config['paths']['tmp'];
         }
         if ($path[0] != '/') {
-            $path = $this->config['paths']['root'] . '/' . $path;
+            $path = $kernel->config['paths']['root'] . '/' . $path;
         }
 
         while (true) {
@@ -937,7 +931,7 @@ class kernel
             throw new Exception('Temporary file creation failed.');
         }
 
-        $this->shutdown_delete_files[] = $filename;
+        $kernel->shutdown_delete_files[] = $filename;
         return $filename;
     }
 
@@ -955,8 +949,10 @@ class kernel
         return $file;
     }
 
-    public function expand($content, $vars = null)
+    public static function expand($content, $vars = null)
     {
+        $kernel = self::getInstance();
+
         /* quick exit for empty vars */
         if (!$content) {
             return $content;
@@ -964,8 +960,8 @@ class kernel
 
         /* get username */
         $username = '';
-        if ($this->session) {
-            $username = $this->session->get('username');
+        if ($kernel->session) {
+            $username = $kernel->session->get('username');
             if (!$username) {
                 $username = '';
             }
@@ -1004,23 +1000,23 @@ class kernel
         /* setup base replace array */
         $replace = array(
             '/home/' . get_current_user(),
-            $this->config['paths']['root'],
-            $this->config['paths']['config'],
-            $this->config['paths']['modules'],
-            $this->config['paths']['routes'],
-            $this->config['paths']['views'],
-            $this->config['paths']['cache'],
-            $this->config['paths']['data'],
-            $this->config['paths']['tmp'],
-            $this->config['paths']['web'],
-            $this->config['paths']['log'],
-            $this->config['paths']['vendor'],
+            $kernel->config['paths']['root'],
+            $kernel->config['paths']['config'],
+            $kernel->config['paths']['modules'],
+            $kernel->config['paths']['routes'],
+            $kernel->config['paths']['views'],
+            $kernel->config['paths']['cache'],
+            $kernel->config['paths']['data'],
+            $kernel->config['paths']['tmp'],
+            $kernel->config['paths']['web'],
+            $kernel->config['paths']['log'],
+            $kernel->config['paths']['vendor'],
             $username,
-            $this->lang,
-            $this->config['urls']['base'],
-            $this->config['urls']['error'],
-            $this->config['urls']['login'],
-            $this->config['urls']['assets'],
+            $kernel->lang,
+            $kernel->config['urls']['base'],
+            $kernel->config['urls']['error'],
+            $kernel->config['urls']['login'],
+            $kernel->config['urls']['assets'],
             get_current_user(),
             $group,
             getmyuid(),
@@ -1036,7 +1032,7 @@ class kernel
             foreach ($matches[0] as $match) {
                 $match             = trim($match, '{}');
                 list($prefix, $tr) = explode(':', $match, 2);
-                $vars[$match]      = $this->tr($tr);
+                $vars[$match]      = $kernel->tr($tr);
             }
         }
 
@@ -1051,19 +1047,17 @@ class kernel
         /* expand all above */
         $content = str_replace($search, $replace, $content);
 
-        /* find and fill translation keys */
-        // $content = preg_replace_callback('/{tr:[^}]+}/', array($this, 'tr'), $content);
-
         return $content;
     }
 
-    public function tr($text)
+    public static function tr($text)
     {
-        $translations = $this->loadTranslations();
+        $kernel       = self::getInstance();
+        $translations = $kernel->loadTranslations();
 
-        if (isset($translations[$this->lang])) {
+        if (isset($translations[$kernel->lang])) {
             $path    = explode('/', $text);
-            $current = $translations[$this->lang];
+            $current = $translations[$kernel->lang];
             foreach ($path as $v) {
                 if (!is_array($current)) {
                     $current = false;
@@ -1124,10 +1118,10 @@ class kernel
      *
      * @return value of the given key (can be array etc)
      */
-    public function getConfigValue()
+    public static function getConfigValue()
     {
         /* find value that was asked */
-        $value = $this->config;
+        $value = self::getInstance()->config;
         $argv  = func_get_args();
         foreach ($argv as $arg) {
             if (isset($value[$arg])) {
@@ -1188,7 +1182,7 @@ class kernel
      */
     public static function log($level, $message)
     {
-        $kernel = kernel::getInstance();
+        $kernel = self::getInstance();
         if (!$kernel->debug() && $level == LOG_DEBUG) {
             return $message;
         }
@@ -1280,11 +1274,11 @@ class kernel
                 if (isset($call['class']) && isset($call['method'])) {
                     $className  = $call['class'];
                     $methodName = $call['method'];
-                    $method = new ReflectionMethod($className, $methodName);
+                    $method     = new ReflectionMethod($className, $methodName);
                     $method->invokeArgs(null, $args);
                 } else if (isset($call['function'])) {
                     $functionName = $call['function'];
-                    $function = new ReflectionFunction($functionName);
+                    $function     = new ReflectionFunction($functionName);
                     $function->invokeArgs($args);
                 }
             }
@@ -1349,7 +1343,7 @@ class kernel
      */
     public static function internalErrorHandler($errno, $errstr, $errfile, $errline)
     {
-        kernel::getInstance()->log(LOG_ERR, $errfile . ':' . $errline . ': ' . $errstr . '(errno: ' . $errno . ')');
+        self::getInstance()->log(LOG_ERR, $errfile . ':' . $errline . ': ' . $errstr . '(errno: ' . $errno . ')');
         return true;
     }
 
@@ -1370,7 +1364,7 @@ class kernel
      */
     public static function msg($tag, $message)
     {
-        $kernel = kernel::getInstance();
+        $kernel = self::getInstance();
 
         if (is_object($message)) {
             $message = $message->getError();
@@ -1448,29 +1442,31 @@ class kernel
      *
      * @return string URL.
      */
-    public function historyPop($count = 0)
+    public static function historyPop($count = 0)
     {
-        $history = $this->session->get('kernel:history');
+        $kernel = self::getInstance();
+
+        $history = $kernel->session->get('kernel:history');
         if (!is_array($history)) {
-            return $this->config['urls']['base'];
+            return $kernel->config['urls']['base'];
         }
         if (count($history) < 1) {
-            return $this->config['urls']['base'];
+            return $kernel->config['urls']['base'];
         }
         for ($i = 0; $i < $count; $i++) {
             array_pop($history);
         }
         $url = array_pop($history);
-        $this->session->set('kernel:history', $history);
+        $kernel->session->set('kernel:history', $history);
         return $url;
     }
 
     /**
      * Disable history for this request.
      */
-    public function historyDisable()
+    public static function historyDisable()
     {
-        $this->historyDisabled = true;
+        self::getInstance()->historyDisabled = true;
     }
 
     /**
@@ -1478,21 +1474,23 @@ class kernel
      *
      * @return mixed Current cache instance or null if cache is not available.
      */
-    public function getCacheInstance()
+    public static function getCacheInstance()
     {
-        if ($this->cache !== false) {
-            return $this->cache;
+        $kernel = self::getInstance();
+
+        if ($kernel->cache !== false) {
+            return $kernel->cache;
         }
-        $this->cache = null;
-        if (!isset($this->config['cache']['type'])) {
+        $kernel->cache = null;
+        if (!isset($kernel->config['cache']['type'])) {
             return null;
         }
-        $type   = strtolower($this->config['cache']['type']);
+        $type   = strtolower($kernel->config['cache']['type']);
         $config = array();
-        if (isset($this->config['cache']['config'])) {
-            $config = $this->config['cache']['config'];
+        if (isset($kernel->config['cache']['config'])) {
+            $config = $kernel->config['cache']['config'];
             if (isset($config['path'])) {
-                $config['path'] = realpath($this->expand($config['path']));
+                $config['path'] = realpath($kernel->expand($config['path']));
             }
             if (!is_dir($config['path'])) {
                 throw new Exception500('Cache path ' . $config['path'] . ' does not exist.');
@@ -1500,18 +1498,24 @@ class kernel
         }
 
         if ($type == 'phpfastcache') {
-            $driver = isset($this->config['cache']['driver']) ? $this->config['cache']['type'] : 'files';
+            $driver = isset($kernel->config['cache']['driver']) ? $kernel->config['cache']['type'] : 'files';
             phpFastCache\CacheManager::setDefaultConfig($config);
-            $this->cache = phpFastCache\CacheManager::getInstance($driver);
+            $kernel->cache = phpFastCache\CacheManager::getInstance($driver);
         }
 
-        return $this->cache;
+        return $kernel->cache;
+    }
+
+    /* for backwards compatibility */
+    public static function yaml_read($file, $ttl = 600)
+    {
+        return self::yamlRead($file, $ttl);
     }
 
     /**
      * Parse YAML file, with caching.
      */
-    public static function yaml_read($file, $ttl = 600)
+    public static function yamlRead($file, $ttl = 600)
     {
         /* expands all symbolic links and resolves references */
         $file_real = realpath($file);
@@ -1522,11 +1526,11 @@ class kernel
                 /* file does not exist */
                 return false;
             } else {
-                kernel::log(LOG_NOTICE, 'file found with old .yaml extension, change to .yml for file: ' . $file_real);
+                self::log(LOG_NOTICE, 'file found with old .yaml extension, change to .yml for file: ' . $file_real);
             }
         }
         /* check cache */
-        $cache      = $ttl > 0 ? kernel::getInstance()->getCacheInstance() : null;
+        $cache      = $ttl > 0 ? self::getInstance()->getCacheInstance() : null;
         $cache_item = null;
         if ($cache) {
             $cache_item = $cache->getItem(hash('sha512', $file_real));
@@ -1537,14 +1541,14 @@ class kernel
         /* read file contents and parse */
         $data = @file_get_contents($file_real);
         if ($data === false) {
-            kernel::log(LOG_ERR, 'unable to read yaml contents, file: ' . $file_real);
+            self::log(LOG_ERR, 'unable to read yaml contents, file: ' . $file_real);
             return false;
         }
         try
         {
             $data = Symfony\Component\Yaml\Yaml::parse($data);
         } catch (Exception $e) {
-            kernel::log(LOG_ERR, 'unable to parse yaml contents, file: ' . $file_real . ', error: ' . $e->getMessage());
+            self::log(LOG_ERR, 'unable to parse yaml contents, file: ' . $file_real . ', error: ' . $e->getMessage());
             return false;
         }
         if ($cache_item) {
@@ -1554,10 +1558,16 @@ class kernel
         return $data;
     }
 
+    /* for backwards compatibility */
+    public static function yaml_write($file, $data)
+    {
+        return self::yamlWrite($file, $data);
+    }
+
     /**
      * Write to YAML file.
      */
-    public static function yaml_write($file, $data)
+    public static function yamlWrite($file, $data)
     {
         /* dump data */
         $data = Symfony\Component\Yaml\Yaml::dump($data);
@@ -1568,7 +1578,7 @@ class kernel
         /* expands all symbolic links and resolves references */
         $file_real = realpath($file);
         /* delete old entry from cache */
-        $cache = kernel::getInstance()->getCacheInstance();
+        $cache = self::getInstance()->getCacheInstance();
         if ($cache && $file_real) {
             $cache->deleteItem(hash('sha512', $file_real));
         }
