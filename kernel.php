@@ -1259,10 +1259,12 @@ class kernel
     /**
      * Emit a signal.
      */
-    public function emit($parent, $name)
+    public static function emit(string $parent, string $name)
     {
-        $this->emitRecursionCounter++;
-        if ($this->emitRecursionCounter > 5) {
+        $kernel = self::getInstance();
+
+        $kernel->emitRecursionCounter++;
+        if ($kernel->emitRecursionCounter > 5) {
             throw new Exception('emit() call recursion occured');
         }
         $signal = $parent . ':' . $name;
@@ -1270,7 +1272,7 @@ class kernel
         array_shift($args);
         array_shift($args);
         array_unshift($args, $signal);
-        $calls = $this->getConfigValue('setup', 'signals', $signal);
+        $calls = $kernel->getConfigValue('setup', 'signals', $signal);
         if (is_array($calls)) {
             foreach ($calls as $call) {
                 if (isset($call['class']) && isset($call['method'])) {
@@ -1285,7 +1287,7 @@ class kernel
                 }
             }
         }
-        $this->emitRecursionCounter--;
+        $kernel->emitRecursionCounter--;
     }
 
     /**
