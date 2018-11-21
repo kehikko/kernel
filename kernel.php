@@ -1503,8 +1503,8 @@ class kernel
 
         if ($type == 'phpfastcache') {
             $driver = isset($kernel->config['cache']['driver']) ? $kernel->config['cache']['type'] : 'files';
-            phpFastCache\CacheManager::setDefaultConfig($config);
-            $kernel->cache = phpFastCache\CacheManager::getInstance($driver);
+            \Phpfastcache\CacheManager::setDefaultConfig(new \Phpfastcache\Config\ConfigurationOption($config));
+            $kernel->cache = \Phpfastcache\CacheManager::getInstance($driver);
         }
 
         return $kernel->cache;
