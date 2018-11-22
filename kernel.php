@@ -1536,7 +1536,7 @@ class kernel
         /* check cache */
         $cache      = $ttl > 0 ? self::getInstance()->getCacheInstance() : null;
         $cache_item = null;
-        if ($cache) {
+        if ($cache && !self::debug()) {
             $cache_item = $cache->getItem(hash('sha512', $file_real));
             if ($cache_item->isHit()) {
                 return $cache_item->get();
