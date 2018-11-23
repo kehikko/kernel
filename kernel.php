@@ -107,8 +107,8 @@ class kernel
     /**
      * Load kernel configuration.
      *
-     * @param  string $config_dir Path to kernel configuration directory. Default is '../config/'.
-     * @return Route  controller parsed from url.
+     * @param  string $config_dir Path to kernel configuration directory
+     * @return controller parsed from url
      */
     public function load($config_dir)
     {
