@@ -1143,11 +1143,11 @@ class kernel
         $default = null;
 
         /* check arguments */
-        if (is_string($arg1)) {
-            $path    = explode(':', $arg1);
+        if (is_string($arg1) || is_array($arg1)) {
+            $path    = is_array($arg1) ? $arg1 : explode(':', $arg1);
             $default = $arg2;
-        } else if (is_object($arg1) && is_string($arg2)) {
-            $path = explode(':', $arg2);
+        } else if (is_object($arg1) && (is_string($arg2) || is_array($arg2))) {
+            $path = is_array($arg2) ? $arg2 : explode(':', $arg2);
             array_unshift($path, 'modules', get_class($arg1));
             $default = $arg3;
         } else {
