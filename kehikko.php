@@ -27,9 +27,6 @@ $commands = array(
 $kernel = kernel::getInstance();
 $kernel->load(getcwd() . '/config/');
 
-var_dump(cfg('console:username', 'none'));
-var_dump(cfg('paths:module', 'none'));
-
 /* authenticate console actions as default to this account */
 $username = $kernel->getConfigValue('console', 'username');
 if ($username) {
