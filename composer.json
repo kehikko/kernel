@@ -1,22 +1,19 @@
 {
-	"name": "kehikko/kernel",
-	"description": "Kernel for kehikko framework",
-	"license": "MIT",
-	"authors": [
-	{
-		"name": "Antti Partanen",
-		"email": "aehparta@iki.fi"
-	}],
-	"require":
-	{
-		"php": ">=7.0.0"
-	},
-	"bin": ["kehikko", "kehikko.php"],
-	"autoload":
-	{
-		"psr-0":
-		{
-			"kernel": ""
-		}
-	}
+  "name": "kehikko/kernel",
+  "description": "Kernel for kehikko framework",
+  "license": "MIT",
+  "authors": [{
+    "name": "Antti Partanen",
+    "email": "aehparta@iki.fi"
+  }],
+  "require": {
+    "php": ">=7.0.0"
+  },
+  "bin": ["kehikko", "kehikko.php"],
+  "autoload": {
+    "files": ["cfg.php"],
+    "psr-0": {
+      "kernel": ""
+    }
+  }
 }

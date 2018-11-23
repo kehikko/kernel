@@ -824,7 +824,7 @@ class kernel
     private function mergeTranslations($to, $from, $lang)
     {
         /* log overlapping translations if debug is set */
-        if ($this->debug()) {
+        if (self::debug()) {
             foreach ($from as $key => $value) {
                 if (is_array($value)) {
                     if (isset($to[$key]) && is_array($to[$key])) {
@@ -1137,6 +1137,38 @@ class kernel
         return $value;
     }
 
+    public function cfg($arg1, $arg2 = null, $arg3 = null)
+    {
+        $path    = null;
+        $default = null;
+
+        /* check arguments */
+        if (is_string($arg1)) {
+            $path    = explode(':', $arg1);
+            $default = $arg2;
+        } else if (is_object($arg1) && is_string($arg2)) {
+            $path = explode(':', $arg2);
+            array_unshift($path, 'modules', get_class($arg1));
+            $default = $arg3;
+        } else {
+            throw new \Exception('invalid cfg() path parameter');
+        }
+
+        /* find value that was asked */
+        $value = $this->config;
+        foreach ($path as $part) {
+            if (isset($value[$part])) {
+                /* part found, continue to next part */
+                $value = $value[$part];
+            } else {
+                /* not found */
+                return $default;
+            }
+        }
+
+        return $value;
+    }
+
     public function getRouteValue($route, $value)
     {
         $route = 'route_' . $route;
@@ -1185,7 +1217,7 @@ class kernel
     public static function log($level, $message)
     {
         $kernel = self::getInstance();
-        if (!$kernel->debug() && $level == LOG_DEBUG) {
+        if (!self::debug() && $level == LOG_DEBUG) {
             return $message;
         }
 
