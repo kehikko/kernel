@@ -1,6 +1,6 @@
 <?php
 
-function emit($context, $signal, $args = null)
+function emit(string $context, string $signal, $args = null)
 {
     
 }
