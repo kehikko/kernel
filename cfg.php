@@ -1,5 +1,7 @@
 <?php
 
+$cfg = array();
+
 /**
  * Return value from configuration, or null if value with given key-chain
  * is not found.
@@ -20,14 +22,14 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
         $default = $arg2;
     } else if (is_object($arg1) && (is_string($arg2) || is_array($arg2))) {
         $path = is_array($arg2) ? $arg2 : explode(':', $arg2);
-        array_unshift($path, 'class', get_class($arg1));
+        array_unshift($path, 'modules', get_class($arg1));
         $default = $arg3;
     } else {
         throw new \Exception('invalid cfg() parameter');
     }
 
     /* find value that was asked */
-    $value = \kernel::getInstance()->config;
+    $value = $cfg;
     foreach ($path as $key) {
         if (isset($value[$key])) {
             /* key found, continue to next key */
