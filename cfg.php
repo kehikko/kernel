@@ -1,6 +1,6 @@
 <?php
 
-function cfg_init($cfg_file = null)
+function cfg_init(string $cfg_file = null)
 {
     static $cfg = null;
 
@@ -11,10 +11,21 @@ function cfg_init($cfg_file = null)
     if (!$cfg_file) {
         $cfg_file = __DIR__ . '/../../../config/config.yml';
     }
-    if (!is_file($cfg_file)) {
-        throw new Exception('configuration file is invalid, path: ' . $cfg_file);
+
+    /* load base config */
+    $cfg = tool_yaml_load($cfg_file, false);
+    if (!$cfg) {
+        throw new Exception('base configuration file is invalid, path: ' . $cfg_file);
     }
-    $data = null;
+
+    /* try to load local config */
+    $cfg_file  = dirname($cfg_file) . '/config-local.yml';
+    $cfg_local = tool_yaml_load($cfg_file, false);
+    if ($cfg_local) {
+        $cfg = tool_array_merge($cfg, $cfg_local);
+    }
+
+    return $cfg;
 }
 
 /**
@@ -44,7 +55,7 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
     }
 
     /* find value that was asked */
-    $value = $cfg;
+    $value = cfg_init();
     foreach ($path as $key) {
         if (isset($value[$key])) {
             /* key found, continue to next key */
