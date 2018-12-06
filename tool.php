@@ -27,7 +27,7 @@ function tool_array_merge($to, $from)
     foreach ($from as $key => $value) {
         if (is_array($value)) {
             if (isset($to[$key]) && is_array($to[$key])) {
-                $to[$key] = self::mergeArrayRecursive($to[$key], $value);
+                $to[$key] = tool_array_merge($to[$key], $value);
             } else {
                 $to[$key] = $value;
             }

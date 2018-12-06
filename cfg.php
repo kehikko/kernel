@@ -19,10 +19,71 @@ function cfg_init(string $cfg_file = null)
     }
 
     /* try to load local config */
-    $cfg_file  = dirname($cfg_file) . '/config-local.yml';
-    $cfg_local = tool_yaml_load($cfg_file, false);
+    $cfg_local_file = dirname($cfg_file) . '/config-local.yml';
+    $cfg_local      = tool_yaml_load($cfg_local_file, false);
     if ($cfg_local) {
         $cfg = tool_array_merge($cfg, $cfg_local);
+    }
+
+    /* setup defaults, if something is not already set in config */
+    $cfg_default = array(
+        'setup' => array(
+            'debug'     => false,
+            'formats'   => array('html', 'json'),
+            'lang'      => 'en',
+            'languages' => array('en' => 'English'),
+        ),
+        'urls'  => array(
+            'base'   => '/',
+            'error'  => '/404/',
+            'login'  => '/login/',
+            'assets' => '/',
+        ),
+        'paths' => array(
+            'root'    => realpath(dirname($cfg_file) . '/../'),
+            'config'  => 'config',
+            'modules' => 'modules',
+            'routes'  => 'routes',
+            'views'   => 'views',
+            'cache'   => 'cache',
+            'data'    => 'data',
+            'tmp'     => '/tmp',
+            'web'     => 'web',
+            'log'     => 'log',
+            'vendor'  => 'vendor',
+        ),
+    );
+    $cfg = tool_array_merge($cfg_default, $cfg);
+
+    /* add root to paths that are relative */
+    foreach ($cfg['paths'] as $name => $value) {
+        /* skip root itself */
+        if ($name == 'root') {
+            /* root must always be absolute */
+            if ($value[0] != '/') {
+                throw new Exception('configuration error, root path must be absolute!');
+            }
+            continue;
+        }
+
+        /* if there is no slash ('/') as first character, assume this is not an absolute path */
+        if ($value[0] !== '/') {
+            /* relative path, prepend with root */
+            $value = $cfg['paths']['root'] . '/' . $value;
+        }
+
+        $path = realpath($value);
+        if (!$path) {
+            throw new Exception('non-accesible path set in config: ' . $value);
+        }
+
+        $cfg['paths'][$name] = $path;
+    }
+
+    /* set locale if defined */
+    if (isset($cfg['setup']['locale'])) {
+        $locale = setlocale(LC_ALL, $cfg['setup']['locale']);
+        putenv('LC_ALL=' . $locale);
     }
 
     return $cfg;
