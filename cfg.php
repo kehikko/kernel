@@ -11,5 +11,32 @@
  */
 function cfg($arg1, $arg2 = null, $arg3 = null)
 {
-    return \kernel::getInstance()->cfg($arg1, $arg2, $arg3);
+    $path    = null;
+    $default = null;
+
+    /* check arguments */
+    if (is_string($arg1) || is_array($arg1)) {
+        $path    = is_array($arg1) ? $arg1 : explode(':', $arg1);
+        $default = $arg2;
+    } else if (is_object($arg1) && (is_string($arg2) || is_array($arg2))) {
+        $path = is_array($arg2) ? $arg2 : explode(':', $arg2);
+        array_unshift($path, 'class', get_class($arg1));
+        $default = $arg3;
+    } else {
+        throw new \Exception('invalid cfg() parameter');
+    }
+
+    /* find value that was asked */
+    $value = \kernel::getInstance()->config;
+    foreach ($path as $key) {
+        if (isset($value[$key])) {
+            /* key found, continue to next key */
+            $value = $value[$key];
+        } else {
+            /* not found */
+            return $default;
+        }
+    }
+
+    return $value;
 }
