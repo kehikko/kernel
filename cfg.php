@@ -129,3 +129,11 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
 
     return $value;
 }
+
+/**
+ * Helper to check if we are in debug mode.
+ */
+function cfg_debug()
+{
+    return cfg(['setup', 'debug']) === true;
+}

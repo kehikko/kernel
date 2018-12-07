@@ -12,7 +12,7 @@
   },
   "bin": ["kehikko", "kehikko.php"],
   "autoload": {
-    "files": ["tool.php", "cfg.php", "cache.php", "log.php", "emit.php"],
+    "files": ["tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "expand.php"],
     "psr-0": {
       "kernel": ""
     }
