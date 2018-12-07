@@ -1,22 +1,30 @@
 <?php
 
-function tool_yaml_load(string $file, bool $log_errors = true)
+function tool_yaml_load(array $files, bool $log_errors = true)
 {
-    if (!is_file($file)) {
-        return null;
-    }
+    $data = [];
 
-    $data = @file_get_contents($file);
-    if ($data === false) {
-        return null;
-    }
+    foreach ($files as $file) {
+        if (!is_file($file)) {
+            continue;
+        }
 
-    try
-    {
-        $data = \Symfony\Component\Yaml\Yaml::parse($data);
-    } catch (Exception $e) {
-        log_if_err($log_errors, 'unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
-        return false;
+        $content = @file_get_contents($file);
+        if ($content === false) {
+            continue;
+        }
+
+        try
+        {
+            $content = \Symfony\Component\Yaml\Yaml::parse($content);
+        } catch (Exception $e) {
+            log_if_err($log_errors, 'unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+            continue;
+        }
+
+        if (is_array($content)) {
+            $data = tool_array_merge($data, $content);
+        }
     }
 
     return $data;
@@ -86,4 +94,29 @@ function tool_call($call, array $args = [], $log = true)
         return $reflect->invokeArgs($args);
     }
     return null;
+}
+
+function tool_system_find_files(array $filenames, $paths = null, $depth = 1)
+{
+    $found = array();
+
+    /* check system paths for given file: config, modules, routes and vendor */
+    if (!is_array($paths)) {
+        $paths = [cfg(['paths', 'config']), cfg(['paths', 'vendor']), cfg(['paths', 'modules']), cfg(['paths', 'routes'])];
+    }
+    foreach ($paths as $path) {
+        $files = scandir($path);
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') {
+                continue;
+            }
+            if (in_array($file, $filenames) && is_file($path . '/' . $file)) {
+                $found[] = $path . '/' . $file;
+            } else if ($depth > 0 && is_dir($path . '/' . $file)) {
+                $found = array_merge($found, tool_system_find_files($filenames, [$path . '/' . $file], $depth - 1));
+            }
+        }
+    }
+
+    return $found;
 }

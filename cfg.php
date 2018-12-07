@@ -13,16 +13,9 @@ function cfg_init(string $cfg_file = null)
     }
 
     /* load base config */
-    $cfg = tool_yaml_load($cfg_file, false);
-    if (!$cfg) {
+    $cfg = tool_yaml_load([$cfg_file, dirname($cfg_file) . '/config-local.yml'], false);
+    if (empty($cfg)) {
         throw new Exception('base configuration file is invalid, path: ' . $cfg_file);
-    }
-
-    /* try to load local config */
-    $cfg_local_file = dirname($cfg_file) . '/config-local.yml';
-    $cfg_local      = tool_yaml_load($cfg_local_file, false);
-    if ($cfg_local) {
-        $cfg = tool_array_merge($cfg, $cfg_local);
     }
 
     /* setup defaults, if something is not already set in config */
