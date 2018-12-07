@@ -7,16 +7,8 @@ function log_record(int $priority, string $message, array $context = array(), $e
         return;
     }
 
-    /* "sprintf" */
-    if (count($context) > 0) {
-        $replace = array();
-        foreach ($context as $key => $val) {
-            if (!is_array($val) && (!is_object($val) || method_exists($val, '__toString'))) {
-                $replace['{' . $key . '}'] = $val;
-            }
-        }
-        $message = strtr($message, $replace);
-    }
+    /* translate possible references */
+    $message = tr($message, $context);
 
     /* resolve default log level */
     $levels = array(
