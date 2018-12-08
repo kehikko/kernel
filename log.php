@@ -56,8 +56,17 @@ function log_record(int $priority, string $message, array $context = array(), $e
     if (cfg(['log', 'file', 'enabled']) !== false) {
         $p = array_search(cfg(['log', 'file', 'level'], $level_default), $levels);
         if ($p === false || $p >= $priority) {
-            $time = time();
-            // echo $levels[$priority] . ' ' . $message . "\n";
+            static $f = null;
+            if ($f === null) {
+                $logfile = cfg(['log', 'file', 'file'], '{path:log}/kernel.log');
+                $f       = @fopen($logfile, 'a');
+                if (!$f) {
+                    error_log('failed to open log file: ' . $logfile);
+                }
+            }
+            if ($f) {
+                fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $levels[$priority] . ' ' . $message . "\n");
+            }
         }
     }
 

@@ -19,21 +19,21 @@ function tr_init()
     $replace['{server:group}'] = posix_getgrgid(getmygid())['name'];
 
     /* configuration */
-    $replace['{path:root}']    = cfg(['paths', 'root'], '');
-    $replace['{path:config}']  = cfg(['paths', 'config'], '');
-    $replace['{path:modules}'] = cfg(['paths', 'modules'], '');
-    $replace['{path:routes}']  = cfg(['paths', 'routes'], '');
-    $replace['{path:views}']   = cfg(['paths', 'views'], '');
-    $replace['{path:cache}']   = cfg(['paths', 'cache'], '');
-    $replace['{path:data}']    = cfg(['paths', 'data'], '');
-    $replace['{path:tmp}']     = cfg(['paths', 'tmp'], '');
-    $replace['{path:web}']     = cfg(['paths', 'web'], '');
-    $replace['{path:log}']     = cfg(['paths', 'log'], '');
-    $replace['{path:vendor}']  = cfg(['paths', 'vendor'], '');
-    $replace['{url:base}']     = cfg(['urls', 'base'], '');
-    $replace['{url:error}']    = cfg(['urls', 'error'], '');
-    $replace['{url:login}']    = cfg(['urls', 'login'], '');
-    $replace['{url:assets}']   = cfg(['urls', 'assets'], '');
+    $replace['{path:root}']    = cfg(['paths', 'root'], '', null, false);
+    $replace['{path:config}']  = cfg(['paths', 'config'], '', null, false);
+    $replace['{path:modules}'] = cfg(['paths', 'modules'], '', null, false);
+    $replace['{path:routes}']  = cfg(['paths', 'routes'], '', null, false);
+    $replace['{path:views}']   = cfg(['paths', 'views'], '', null, false);
+    $replace['{path:cache}']   = cfg(['paths', 'cache'], '', null, false);
+    $replace['{path:data}']    = cfg(['paths', 'data'], '', null, false);
+    $replace['{path:tmp}']     = cfg(['paths', 'tmp'], '', null, false);
+    $replace['{path:web}']     = cfg(['paths', 'web'], '', null, false);
+    $replace['{path:log}']     = cfg(['paths', 'log'], '', null, false);
+    $replace['{path:vendor}']  = cfg(['paths', 'vendor'], '', null, false);
+    $replace['{url:base}']     = cfg(['urls', 'base'], '', null, false);
+    $replace['{url:error}']    = cfg(['urls', 'error'], '', null, false);
+    $replace['{url:login}']    = cfg(['urls', 'login'], '', null, false);
+    $replace['{url:assets}']   = cfg(['urls', 'assets'], '', null, false);
 
     /* find and load translations */
     $translation_files = [];
@@ -69,7 +69,7 @@ function tr(string $content, array $args = [])
     //         $username = '';
     //     }
     // }
-    $replace['{session:lang}'] = cfg(['setup', 'lang'], 'en');
+    $replace['{session:lang}'] = cfg(['setup', 'lang'], 'en', null, false);
 
     /* append user defined args */
     foreach ($args as $key => $val) {

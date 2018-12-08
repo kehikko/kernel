@@ -89,9 +89,10 @@ function cfg_init(string $cfg_file = null)
  * @param  mixed $arg1 key or object which is used to find config value under modules-section
  * @param  mixed $arg2 default or key depending on first argument
  * @param  mixed $arg3 default or ignored depending on first argument
+ * @param  bool  $tr   auto-translate return value (call tr()) if it is a string, default true
  * @return mixed value of the given key (can be array etc)
  */
-function cfg($arg1, $arg2 = null, $arg3 = null)
+function cfg($arg1, $arg2 = null, $arg3 = null, bool $tr = true)
 {
     $path    = null;
     $default = null;
@@ -116,8 +117,14 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
             $value = $value[$key];
         } else {
             /* not found */
-            return $default;
+            $value = $default;
+            break;
         }
+    }
+
+    /* auto translate strings */
+    if ($tr && is_string($value)) {
+        $value = tr($value);
     }
 
     return $value;
