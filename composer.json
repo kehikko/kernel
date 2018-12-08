@@ -8,11 +8,12 @@
   }],
   "require": {
     "php": ">=7.0.0",
-    "symfony/yaml": "^4.2"
+    "symfony/yaml": "^4.2",
+    "pear/console_commandline": "^1.2",
   },
   "bin": ["kehikko", "kehikko.php"],
   "autoload": {
-    "files": ["tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "tr.php"],
+    "files": ["autoload.php", "tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "tr.php"],
     "psr-0": {
       "kernel": ""
     }

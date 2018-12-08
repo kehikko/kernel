@@ -48,6 +48,12 @@ function tool_array_merge($to, $from)
 
 function tool_call_parse($call, $log = true)
 {
+    /* bit of backwards compatibility */
+    if (!isset($call['call']) && isset($call['class']) && isset($call['method']) && is_string($call['class']) && is_string($call['method'])) {
+        $call['call'] = $call['class'] . '@' . $call['method'];
+    }
+
+    /* check that call is defined */
     if (!isset($call['call']) || !is_string($call['call'])) {
         return null;
     }
@@ -96,7 +102,7 @@ function tool_call($call, array $args = [], $log = true)
     return null;
 }
 
-function tool_system_find_files(array $filenames, $paths = null, $depth = 1)
+function tool_system_find_files(array $filenames, $paths = null, $depth = 2)
 {
     $found = array();
 
