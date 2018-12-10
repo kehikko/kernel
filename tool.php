@@ -23,27 +23,11 @@ function tool_yaml_load(array $files, bool $log_errors = true)
         }
 
         if (is_array($content)) {
-            $data = tool_array_merge($data, $content);
+            $data = array_replace_recursive($data, $content);
         }
     }
 
     return $data;
-}
-
-function tool_array_merge($to, $from)
-{
-    foreach ($from as $key => $value) {
-        if (is_array($value)) {
-            if (isset($to[$key]) && is_array($to[$key])) {
-                $to[$key] = tool_array_merge($to[$key], $value);
-            } else {
-                $to[$key] = $value;
-            }
-        } else {
-            $to[$key] = $value;
-        }
-    }
-    return $to;
 }
 
 function tool_call_parse($call, $log = true)
@@ -93,6 +77,9 @@ function tool_call_parse($call, $log = true)
 
 function tool_call($call, array $args = [], $log = true)
 {
+    if (isset($call['args']) && is_array($call['args'])) {
+        $args = array_replace_recursive($call['args'], $args);
+    }
     $reflect = tool_call_parse($call);
     if (is_array($reflect)) {
         return $reflect['method']->invokeArgs($reflect['object'], $args);
@@ -125,4 +112,63 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2)
     }
 
     return $found;
+}
+
+function tool_validate($type, &$value, $convert = true)
+{
+    if (($type == 'string' || empty($type)) && is_string($value)) {
+        return true;
+    }
+
+    /* allow "octal" so that string starting with zero are accepted */
+    else if ($type == 'int' && filter_var($value, FILTER_VALIDATE_INT, FILTER_FLAG_ALLOW_OCTAL) !== false) {
+        $value = $convert ? intval($value) : $value;
+        return true;
+    } else if ($type == 'float' && filter_var($value, FILTER_VALIDATE_FLOAT) !== false) {
+        $value = $convert ? floatval($value) : $value;
+        return true;
+    } else if ($type == 'number' && is_numeric($value)) {
+        $value = $convert ? floatval($value) : $value;
+        return true;
+    } else if ($type == 'bool' && is_bool($value)) {
+        return true;
+    } else if ($type == 'null' && is_null($value)) {
+        return true;
+    } else if ($type == 'array' && is_array($value)) {
+        return true;
+    } else if ($type == 'object' && is_array($value)) {
+        return true;
+    } else if ($type == 'email' && filter_var($value, FILTER_VALIDATE_EMAIL)) {
+        return true;
+    } else if ($type == 'ip' && filter_var($value, FILTER_VALIDATE_IP)) {
+        return true;
+    } else if ($type == 'ipv4' && filter_var($value, FILTER_VALIDATE_IPV4)) {
+        return true;
+    } else if ($type == 'ipv6' && filter_var($value, FILTER_VALIDATE_IPV6)) {
+        return true;
+    } else if ($type == 'url' && filter_var($value, FILTER_VALIDATE_URL)) {
+        return true;
+    } else if ($type == 'datetime' && @date_create($value) !== false) {
+        $value = $convert ? date_create($value) : $value;
+        return true;
+    } else if ($type == 'fqdn' && @tool_validate_fqdn($value) !== false) {
+        return true;
+    } else if ($type == 'fqdn-wildcard' && @tool_validate_fqdn($value, true) !== false) {
+        return true;
+    }
+
+    return false;
+}
+
+function tool_validate_fqdn($domain, $allow_wildcard = false)
+{
+    if ($allow_wildcard and substr($domain, 0, 2) == '*.') {
+        $domain = substr($domain, 2);
+    }
+
+    $pattern = '/(?=^.{1,254}$)(^(?:(?!\d|-)[a-zA-Z0-9\-_]{1,63}(?<!-)\.?)+(?:[a-zA-Z]{2,})$)/i';
+    if (!strpbrk($domain, '.')) {
+        return false;
+    }
+    return !empty($domain) && preg_match($pattern, $domain) > 0;
 }

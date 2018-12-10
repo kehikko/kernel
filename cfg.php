@@ -13,7 +13,7 @@ function cfg_init(string $cfg_file = null)
     }
 
     /* load base config */
-    $cfg = tool_yaml_load([$cfg_file, dirname($cfg_file) . '/config-local.yml'], false);
+    $cfg = tool_yaml_load([$cfg_file, dirname($cfg_file) . '/' . basename($cfg_file, '.yml') . '-local.yml'], false);
     if (empty($cfg)) {
         throw new Exception('base configuration file is invalid, path: ' . $cfg_file);
     }
@@ -46,7 +46,7 @@ function cfg_init(string $cfg_file = null)
             'vendor'  => 'vendor',
         ),
     );
-    $cfg = tool_array_merge($cfg_default, $cfg);
+    $cfg = array_replace_recursive($cfg_default, $cfg);
 
     /* add root to paths that are relative */
     foreach ($cfg['paths'] as $name => $value) {
@@ -78,7 +78,7 @@ function cfg_init(string $cfg_file = null)
         $locale = setlocale(LC_ALL, $cfg['setup']['locale']);
         putenv('LC_ALL=' . $locale);
     }
-
+    
     return $cfg;
 }
 
