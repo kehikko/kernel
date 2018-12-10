@@ -89,7 +89,7 @@ function tool_call($call, array $args = [], $log = true)
     return null;
 }
 
-function tool_system_find_files(array $filenames, $paths = null, $depth = 2)
+function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $find_dirs = false)
 {
     $found = array();
 
@@ -103,7 +103,7 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2)
             if ($file == '.' || $file == '..') {
                 continue;
             }
-            if (in_array($file, $filenames) && is_file($path . '/' . $file)) {
+            if (in_array($file, $filenames) && ($find_dirs ? is_dir($path . '/' . $file) : is_file($path . '/' . $file))) {
                 $found[] = $path . '/' . $file;
             } else if ($depth > 0 && is_dir($path . '/' . $file)) {
                 $found = array_merge($found, tool_system_find_files($filenames, [$path . '/' . $file], $depth - 1));
