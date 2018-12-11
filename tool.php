@@ -47,6 +47,7 @@ function tool_call_parse($call, $log = true)
     /* function call */
     if (count($parts) == 1) {
         if (!function_exists($call['call'])) {
+            log_if_err($log, 'call parsing failed, function does not exist: ' . $call['call']);
             return null;
         }
         return new ReflectionFunction($call['call']);
@@ -54,10 +55,12 @@ function tool_call_parse($call, $log = true)
 
     /* method call */
     if (!class_exists($parts[0])) {
+        log_if_err($log, 'call parsing failed, class does not exist: ' . $call['call']);
         return null;
     }
     $class = new ReflectionClass($parts[0]);
     if (!$class->hasMethod($parts[1])) {
+        log_if_err($log, 'call parsing failed, method does not exist: ' . $call['call']);
         return null;
     }
     $method = $class->getMethod($parts[1]);
@@ -69,6 +72,7 @@ function tool_call_parse($call, $log = true)
 
     /* method is not static, check if class can be constructed without parameters */
     if ($class->hasMethod('__construct') && $class->getMethod('__construct')->getNumberOfRequiredParameters() > 0) {
+        log_if_err($log, 'call parsing failed, trying to use a non-static method with class that requires parameters for constructor: ' . $call['call']);
         return null;
     }
 
@@ -80,7 +84,7 @@ function tool_call($call, array $args = [], $log = true)
     if (isset($call['args']) && is_array($call['args'])) {
         $args = array_replace_recursive($call['args'], $args);
     }
-    $reflect = tool_call_parse($call);
+    $reflect = tool_call_parse($call, $log);
     if (is_array($reflect)) {
         return $reflect['method']->invokeArgs($reflect['object'], $args);
     } else if (is_a($reflect, 'ReflectionFunction')) {

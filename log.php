@@ -1,5 +1,36 @@
 <?php
 
+/* colors in terminal */
+define('LDC_DEFAULT', "\033[0m");
+define('LDC_DGRAYB', "\033[1;30m");
+define('LDC_REDB', "\033[1;31m");
+define('LDC_GREENB', "\033[1;32m");
+define('LDC_YELLOWB', "\033[1;33m");
+define('LDC_BLUEB', "\033[1;34m");
+define('LDC_PURPLEB', "\033[1;35m");
+define('LDC_CYANB', "\033[1;36m");
+define('LDC_WHITEB', "\033[1;37m");
+
+define('LDC_DGRAY', "\033[30m");
+define('LDC_RED', "\033[31m");
+define('LDC_GREEN', "\033[32m");
+define('LDC_YELLOW', "\033[33m");
+define('LDC_BLUE', "\033[34m");
+define('LDC_PURPLE', "\033[35m");
+define('LDC_CYAN', "\033[36m");
+define('LDC_WHITE', "\033[37m");
+
+define('LDC_BDGRAY', "\033[40m");
+define('LDC_BRED', "\033[41m");
+define('LDC_BGREEN', "\033[42m");
+define('LDC_BYELLOW', "\033[43m");
+define('LDC_BBLUE', "\033[44m");
+define('LDC_BPURPLE', "\033[45m");
+define('LDC_BCYAN', "\033[46m");
+define('LDC_BWHITE', "\033[47m");
+
+define('LOG_VERBOSE', LOG_DEBUG + 1);
+
 function log_record(int $priority, string $message, array $context = array(), $emit = true)
 {
     /* do not log debug messages if not in debug mode */
@@ -12,15 +43,15 @@ function log_record(int $priority, string $message, array $context = array(), $e
 
     /* resolve default log level */
     $levels = array(
-        LOG_EMERG     => 'EMERGENCY',
-        LOG_ALERT     => 'ALERT',
-        LOG_CRIT      => 'CRITICAL',
-        LOG_ERR       => 'ERROR',
-        LOG_WARNING   => 'WARNING',
-        LOG_NOTICE    => 'NOTICE',
-        LOG_INFO      => 'INFO',
-        LOG_DEBUG     => 'DEBUG',
-        LOG_DEBUG + 1 => 'VERBOSE',
+        LOG_EMERG   => 'EMERGENCY',
+        LOG_ALERT   => 'ALERT',
+        LOG_CRIT    => 'CRITICAL',
+        LOG_ERR     => 'ERROR',
+        LOG_WARNING => 'WARNING',
+        LOG_NOTICE  => 'NOTICE',
+        LOG_INFO    => 'INFO',
+        LOG_DEBUG   => 'DEBUG',
+        LOG_VERBOSE => 'VERBOSE',
     );
     $priority_default = array_search(cfg(['log', 'level'], 'DEBUG'), $levels);
     if ($priority_default === false) {
@@ -74,7 +105,23 @@ function log_record(int $priority, string $message, array $context = array(), $e
     if ($address == 'console' && cfg(['log', 'console', 'enabled']) !== false) {
         $p = array_search(cfg(['log', 'console', 'level'], $level_default), $levels);
         if ($p === false || $p >= $priority) {
-            echo $levels[$priority] . ' ' . $message . "\n";
+            $colors = cfg(['log', 'console', 'colors'], true);
+            if ($colors) {
+                $color_by_priority = [
+                    LOG_VERBOSE => LDC_PURPLE,
+                    LOG_DEBUG   => LDC_PURPLE,
+                    LOG_INFO    => LDC_BLUE,
+                    LOG_NOTICE  => LDC_CYAN,
+                    LOG_WARNING => LDC_YELLOW,
+                    LOG_ERR     => LDC_RED,
+                    LOG_CRIT    => LDC_REDB,
+                    LOG_ALERT   => LDC_REDB,
+                    LOG_EMERG   => LDC_REDB,
+                ];
+                echo $color_by_priority[$priority] . $levels[$priority] . LDC_DEFAULT . ' ' . $message . "\n";
+            } else {
+                echo $levels[$priority] . ' ' . $message . "\n";
+            }
         }
     }
 
@@ -82,6 +129,11 @@ function log_record(int $priority, string $message, array $context = array(), $e
     if ($emit) {
         emit();
     }
+}
+
+function log_verbose(string $message, array $context = array())
+{
+    log_record(LOG_VERBOSE, $message, $context);
 }
 
 function log_debug(string $message, array $context = array())
@@ -122,6 +174,13 @@ function log_alert(string $message, array $context = array())
 function log_emerg(string $message, array $context = array())
 {
     log_record(LOG_EMERG, $message, $context);
+}
+
+function log_if_verbose($condition, string $message, array $context = array())
+{
+    if ($condition) {
+        log_record(LOG_VERBOSE, $message, $context);
+    }
 }
 
 function log_if_debug($condition, string $message, array $context = array())
