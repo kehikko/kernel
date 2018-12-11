@@ -30,7 +30,7 @@ function tool_yaml_load(array $files, bool $log_errors = true)
     return $data;
 }
 
-function tool_call_parse($call, $log = true)
+function tool_call_parse($call, array $args = [], $log = true)
 {
     /* bit of backwards compatibility */
     if (!isset($call['call']) && isset($call['class']) && isset($call['method']) && is_string($call['class']) && is_string($call['method'])) {
@@ -42,7 +42,39 @@ function tool_call_parse($call, $log = true)
         return null;
     }
 
-    $parts = explode('@', $call['call'], 2);
+    /* parse args */
+    if (isset($call['args']) && is_array($call['args'])) {
+        $args = array_merge($call['args'], $args);
+    }
+    $parts = explode('(', $call['call'], 2);
+    if (count($parts) == 2) {
+        $args = array_merge(['null' => null, 'true' => true, 'false' => false], $args);
+        if (substr($parts[1], -1) != ')') {
+            log_err('call parsing failed, missing ")" from end of call {0}', [$call['call']]);
+            return null;
+        }
+        $names = explode(',', substr($parts[1], 0, -1));
+        if ($names[0] == '') {
+            array_shift($names);
+        }
+        $new_args = [];
+        foreach ($names as $name) {
+            $name = trim($name);
+            if (tool_validate('number', $name)) {
+                tool_validate('int', $name); /* this converts value ($name) to int if it can be done */
+                $new_args[] = $name;
+            } else if (!array_key_exists($name, $args)) {
+                log_err('call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
+                return null;
+            } else {
+                $new_args[] = $args[$name];
+            }
+        }
+        $args = $new_args;
+    }
+
+    /* separate class and method, if there are such */
+    $parts = explode('@', $parts[0], 2);
 
     /* function call */
     if (count($parts) == 1) {
@@ -50,7 +82,7 @@ function tool_call_parse($call, $log = true)
             log_if_err($log, 'call parsing failed, function does not exist: ' . $call['call']);
             return null;
         }
-        return new ReflectionFunction($call['call']);
+        return ['function' => new ReflectionFunction($call['call']), 'args' => $args];
     }
 
     /* method call */
@@ -67,7 +99,7 @@ function tool_call_parse($call, $log = true)
 
     /* if method is static, this is simple and just return it */
     if ($method->isStatic()) {
-        return ['object' => null, 'method' => $method];
+        return ['object' => null, 'method' => $method, 'args' => $args];
     }
 
     /* method is not static, check if class can be constructed without parameters */
@@ -76,24 +108,74 @@ function tool_call_parse($call, $log = true)
         return null;
     }
 
-    return ['object' => $class->newInstance(), 'method' => $method];
+    return ['object' => $class->newInstance(), 'method' => $method, 'args' => $args];
 }
 
 function tool_call($call, array $args = [], $log = true, $silent = false)
 {
-    if (isset($call['args']) && is_array($call['args'])) {
-        $args = array_replace_recursive($call['args'], $args);
-    }
-    $reflect = tool_call_parse($call, $log);
+    /* parse call information */
+    $reflect = tool_call_parse($call, $args, $log);
     if (is_array($reflect)) {
-        return $reflect['method']->invokeArgs($reflect['object'], $args);
-    } else if (is_a($reflect, 'ReflectionFunction')) {
-        return $reflect->invokeArgs($args);
+        $called = false;
+        $r      = null;
+        /* execute call by type */
+        if (isset($reflect['method'])) {
+            $called = true;
+            $r      = $reflect['method']->invokeArgs($reflect['object'], $reflect['args']);
+        } else if (isset($reflect['function'])) {
+            $called = true;
+            $r      = $reflect['function']->invokeArgs($reflect['args']);
+        }
+        /* check return value if something was actually called */
+        if ($called) {
+            /* exception if not silent mode */
+            if (!$silent && !tool_call_successful($call, $r)) {
+                throw new Exception('failed calling dynamic function, see log for details');
+            }
+            return $r;
+        }
     }
+    /* nothing done, log error and return null */
     if (!$silent) {
         throw new Exception('failed calling dynamic function, see log for details');
     }
     return null;
+}
+
+function tool_call_successful($call, $returned)
+{
+    if (isset($call['success'])) {
+        $types = is_array($call['success']) ? $call['success'] : [$call['success']];
+        $n     = count($types);
+        foreach ($types as $type) {
+            if (is_string($type)) {
+                if (!tool_validate($type, $returned, false)) {
+                    $n--;
+                }
+            } else if ($type !== $returned) {
+                $n--;
+            }
+        }
+        if ($n < 1) {
+            log_debug('call failed return value check (no matching success value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+        }
+        return $n > 0;
+    } else if (isset($call['fail'])) {
+        $types = is_array($call['fail']) ? $call['fail'] : [$call['fail']];
+        foreach ($types as $type) {
+            if (is_string($type)) {
+                if (tool_validate($type, $returned, false)) {
+                    log_debug('call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+                    return false;
+                }
+            } else if ($type === $returned) {
+                log_debug('call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+                return false;
+            }
+        }
+        return true;
+    }
+    return true;
 }
 
 function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $find_dirs = false)

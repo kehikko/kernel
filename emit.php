@@ -29,7 +29,7 @@ function emit(string $signal = null, array $args = [])
     }
 
     foreach ($signals as $index => $signal) {
-        $reflect = tool_call_parse($signal, false);
+        $reflect = tool_call_parse($signal, [], false);
         if (is_array($reflect)) {
             $reflect['method']->invokeArgs($reflect['object'], $args);
         } else if (is_a($reflect, 'ReflectionFunction')) {
