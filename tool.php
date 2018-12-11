@@ -79,7 +79,7 @@ function tool_call_parse($call, $log = true)
     return ['object' => $class->newInstance(), 'method' => $method];
 }
 
-function tool_call($call, array $args = [], $log = true)
+function tool_call($call, array $args = [], $log = true, $silent = false)
 {
     if (isset($call['args']) && is_array($call['args'])) {
         $args = array_replace_recursive($call['args'], $args);
@@ -89,6 +89,9 @@ function tool_call($call, array $args = [], $log = true)
         return $reflect['method']->invokeArgs($reflect['object'], $args);
     } else if (is_a($reflect, 'ReflectionFunction')) {
         return $reflect->invokeArgs($args);
+    }
+    if (!$silent) {
+        throw new Exception('failed calling dynamic function, see log for details');
     }
     return null;
 }

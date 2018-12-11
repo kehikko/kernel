@@ -51,4 +51,17 @@ $args    = $opt->command->args;
 $options = $opt->command->options;
 
 /* execute command */
-exit(tool_call($commands[$command], [$command, $args, $options]) === true ? 0 : 1);
+$r = tool_call($commands[$command], [$command, $args, $options]);
+if (is_int($r) && $r >= 0 && $r <= 255) {
+    /* return value is int between 0 and 255 */
+    exit(intval($r));
+} else if ($r === true) {
+    /* return value is true so return ok */
+    exit(0);
+} else if ($r === false) {
+    /* default error value */
+    exit(1);
+}
+
+log_debug('return value for call behind {0} is unsupported (not bool or int between 0-255), returning default error value of 1', [$command]);
+exit(1);
