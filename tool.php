@@ -78,11 +78,11 @@ function tool_call_parse($call, array $args = [], $log = true)
 
     /* function call */
     if (count($parts) == 1) {
-        if (!function_exists($call['call'])) {
+        if (!function_exists($parts[0])) {
             log_if_err($log, 'call parsing failed, function does not exist: ' . $call['call']);
             return null;
         }
-        return ['function' => new ReflectionFunction($call['call']), 'args' => $args];
+        return ['function' => new ReflectionFunction($parts[0]), 'args' => $args];
     }
 
     /* method call */
