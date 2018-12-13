@@ -2,6 +2,11 @@
 
 require_once __DIR__ . '/../../autoload.php';
 
+/* try to start profiler automatically if it is found and enabled */
+if (function_exists('profiler_start') && cfg(['profiler', 'console', 'enabled']) === true) {
+    profiler_start();
+}
+
 /* create command line option parser */
 $optparser                      = new \Console_CommandLine();
 $optparser->description         = 'Kehikko console';
