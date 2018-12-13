@@ -32,6 +32,10 @@ function tool_yaml_load(array $files, bool $log_errors = true)
 
 function tool_call_parse($call, array $args = [], $log = true)
 {
+    if (!is_array($call)) {
+        return null;
+    }
+
     /* bit of backwards compatibility */
     if (!isset($call['call']) && isset($call['class']) && isset($call['method']) && is_string($call['class']) && is_string($call['method'])) {
         $call['call'] = $call['class'] . '@' . $call['method'];
@@ -42,35 +46,38 @@ function tool_call_parse($call, array $args = [], $log = true)
         return null;
     }
 
-    /* parse args */
-    if (isset($call['args']) && is_array($call['args'])) {
-        $args = array_merge($call['args'], $args);
-    }
+    /* create full argument list with context included */
+    $all_args = array_merge(tool_call_ctx(), $args);
+
+    /* check if custom args are defined in the end of call: class@method(custom,args) or function(custom,args) */
     $parts = explode('(', $call['call'], 2);
     if (count($parts) == 2) {
-        $args = array_merge(['null' => null, 'true' => true, 'false' => false], $args);
+        /* add default null/true/false */
+        $all_args = array_merge($all_args, ['null' => null, 'true' => true, 'false' => false]);
+        /* check that argument list is terminated */
         if (substr($parts[1], -1) != ')') {
             log_err('call parsing failed, missing ")" from end of call {0}', [$call['call']]);
             return null;
         }
+        /* parse argument names */
         $names = explode(',', substr($parts[1], 0, -1));
         if ($names[0] == '') {
             array_shift($names);
         }
-        $new_args = [];
+        /* create new argument array */
+        $args = [];
         foreach ($names as $name) {
             $name = trim($name);
             if (tool_validate('number', $name)) {
                 tool_validate('int', $name); /* this converts value ($name) to int if it can be done */
-                $new_args[] = $name;
-            } else if (!array_key_exists($name, $args)) {
+                $args[] = $name;
+            } else if (!array_key_exists($name, $all_args)) {
                 log_err('call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
                 return null;
             } else {
-                $new_args[] = $args[$name];
+                $args[] = $all_args[$name];
             }
         }
-        $args = $new_args;
     }
 
     /* separate class and method, if there are such */
@@ -86,11 +93,25 @@ function tool_call_parse($call, array $args = [], $log = true)
     }
 
     /* method call */
-    if (!class_exists($parts[0])) {
-        log_if_err($log, 'call parsing failed, class does not exist: ' . $call['call']);
+    $class = null;
+    if (class_exists($parts[0])) {
+        /* create new reflection instance of class name */
+        $class = new ReflectionClass($parts[0]);
+    } else if (isset($all_args[$parts[0]]) && is_object($all_args[$parts[0]])) {
+        /* given argument is an object already that we want to use */
+        $object = $all_args[$parts[0]];
+        if (!method_exists($object, $parts[1])) {
+            log_if_err($log, 'call parsing failed, method does not exist: {0}@{1}', [get_class($object), $parts[1]]);
+            return null;
+        }
+        $method = new ReflectionMethod($object, $parts[1]);
+        return ['object' => $object, 'method' => $method, 'args' => $args];
+    } else {
+        log_if_err($log, 'call parsing failed, class or variable does not exist or is not a class: ' . $call['call']);
         return null;
     }
-    $class = new ReflectionClass($parts[0]);
+
+    /* check that reflected class has method we should be calling */
     if (!$class->hasMethod($parts[1])) {
         log_if_err($log, 'call parsing failed, method does not exist: ' . $call['call']);
         return null;
@@ -113,11 +134,19 @@ function tool_call_parse($call, array $args = [], $log = true)
 
 function tool_call($call, array $args = [], $log = true, $silent = false)
 {
+    /* add all args into context */
+    if (isset($call['args']) && is_array($call['args'])) {
+        $args = array_merge($call['args'], $args);
+    }
     /* parse call information */
     $reflect = tool_call_parse($call, $args, $log);
     if (is_array($reflect)) {
         $called = false;
         $r      = null;
+        /* get current argument context */
+        $ctx = tool_call_ctx();
+        /* setup new arguments context */
+        tool_call_ctx(array_merge($ctx, $args));
         /* execute call by type */
         if (isset($reflect['method'])) {
             $called = true;
@@ -126,6 +155,8 @@ function tool_call($call, array $args = [], $log = true, $silent = false)
             $called = true;
             $r      = $reflect['function']->invokeArgs($reflect['args']);
         }
+        /* revert to old context */
+        tool_call_ctx($ctx);
         /* check return value if something was actually called */
         if ($called) {
             /* exception if not silent mode */
@@ -140,6 +171,24 @@ function tool_call($call, array $args = [], $log = true, $silent = false)
         throw new Exception('failed calling dynamic function, see log for details');
     }
     return null;
+}
+
+function tool_call_ctx_get(string $key)
+{
+    $ctx = tool_call_ctx();
+    if (isset($ctx[$key])) {
+        return $ctx[$key];
+    }
+    return null;
+}
+
+function tool_call_ctx($set_to = null)
+{
+    static $ctx = [];
+    if ($set_to !== null) {
+        $ctx = $set_to;
+    }
+    return $ctx;
 }
 
 function tool_call_successful($call, $returned)
@@ -203,14 +252,12 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
     return $found;
 }
 
-function tool_validate($type, &$value, $convert = true)
+function tool_validate($type, &$value, $convert = true, $extra = null)
 {
     if (($type == 'string' || empty($type)) && is_string($value)) {
         return true;
-    }
-
-    /* allow "octal" so that string starting with zero are accepted */
-    else if ($type == 'int' && filter_var($value, FILTER_VALIDATE_INT, FILTER_FLAG_ALLOW_OCTAL) !== false) {
+    } else if ($type == 'int' && filter_var($value, FILTER_VALIDATE_INT, FILTER_FLAG_ALLOW_OCTAL) !== false) {
+        /* allow "octal" so that string starting with zero is accepted */
         $value = $convert ? intval($value) : $value;
         return true;
     } else if ($type == 'float' && filter_var($value, FILTER_VALIDATE_FLOAT) !== false) {
@@ -237,9 +284,25 @@ function tool_validate($type, &$value, $convert = true)
         return true;
     } else if ($type == 'url' && filter_var($value, FILTER_VALIDATE_URL)) {
         return true;
-    } else if ($type == 'datetime' && @date_create($value) !== false) {
-        $value = $convert ? date_create($value) : $value;
-        return true;
+    } else if ($type == 'datetime') {
+        $t = @date_create($value, is_a($extra, 'DateTimeZone') ? $extra : null);
+        if ($t !== false) {
+            $value = $convert ? $t : $value;
+            return true;
+        }
+        return false;
+    } else if ($type == 'timestamp') {
+        /* allow "octal" so that string starting with zero is accepted */
+        $v = filter_var($value, FILTER_VALIDATE_INT, FILTER_FLAG_ALLOW_OCTAL);
+        if ($v === false) {
+            return false;
+        }
+        $v = @date_create('@' . $v);
+        if ($v !== false) {
+            $value = $convert ? $v : $value;
+            return true;
+        }
+        return false;
     } else if ($type == 'fqdn' && @tool_validate_fqdn($value) !== false) {
         return true;
     } else if ($type == 'fqdn-wildcard' && @tool_validate_fqdn($value, true) !== false) {

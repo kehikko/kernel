@@ -106,7 +106,7 @@ function cfg($arg1, $arg2 = null, $arg3 = null, bool $tr = true)
         array_unshift($path, 'modules', get_class($arg1));
         $default = $arg3;
     } else {
-        throw new \Exception('invalid cfg() parameter');
+        throw new Exception('invalid cfg() parameter');
     }
 
     /* find value that was asked */
