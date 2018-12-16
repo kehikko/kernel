@@ -9,7 +9,7 @@ function tr_init()
     }
 
     /* init static replacements */
-    $replace = array();
+    $replace = [];
 
     /* low level server vars */
     $replace['{path:home}']    = getenv('HOME');

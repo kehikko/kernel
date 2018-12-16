@@ -244,7 +244,7 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
             if (in_array($file, $filenames) && ($find_dirs ? is_dir($path . '/' . $file) : is_file($path . '/' . $file))) {
                 $found[] = $path . '/' . $file;
             } else if ($depth > 0 && is_dir($path . '/' . $file)) {
-                $found = array_merge($found, tool_system_find_files($filenames, [$path . '/' . $file], $depth - 1));
+                $found = array_merge($found, tool_system_find_files($filenames, [$path . '/' . $file], $depth - 1, $find_dirs));
             }
         }
     }
