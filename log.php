@@ -79,7 +79,7 @@ function log_record(int $priority, string $message, array $context = array(), $e
         $p = array_search(cfg(['log', 'syslog', 'level'], $level_default), $levels);
         if ($p === false || $p >= $priority) {
             $prefix = cfg(['log', 'syslog', 'prefix']);
-            syslog($priority, $levels[$priority] . ' ' . $message_extra . (is_string($prefix) ? $prefix . ' ' : '') . $message);
+            @syslog($priority, $levels[$priority] . ' ' . $message_extra . (is_string($prefix) ? $prefix . ' ' : '') . $message);
         }
     }
 
@@ -89,14 +89,14 @@ function log_record(int $priority, string $message, array $context = array(), $e
         if ($p === false || $p >= $priority) {
             static $f = null;
             if ($f === null) {
-                $logfile = cfg(['log', 'file', 'file'], '{path:log}/kernel.log');
+                $logfile = cfg(['log', 'file', 'file'], cfg(['path', 'log']) . '/kernel.log');
                 $f       = @fopen($logfile, 'a');
                 if (!$f) {
                     error_log('failed to open log file: ' . $logfile);
                 }
             }
             if ($f) {
-                fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $levels[$priority] . ' ' . $message . "\n");
+                @fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $levels[$priority] . ' ' . $message . "\n");
             }
         }
     }

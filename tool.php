@@ -296,7 +296,7 @@ function tool_validate($type, &$value, $convert = true, $extra = null)
     } else if ($type == 'url' && filter_var($value, FILTER_VALIDATE_URL)) {
         return true;
     } else if ($type == 'datetime') {
-        $t = @date_create($value, is_a($extra, 'DateTimeZone') ? $extra : null);
+        $t = date_create($value, is_a($extra, 'DateTimeZone') ? $extra : null);
         if ($t !== false) {
             $value = $convert ? $t : $value;
             return true;
@@ -308,15 +308,15 @@ function tool_validate($type, &$value, $convert = true, $extra = null)
         if ($v === false) {
             return false;
         }
-        $v = @date_create('@' . $v);
+        $v = date_create('@' . $v);
         if ($v !== false) {
             $value = $convert ? $v : $value;
             return true;
         }
         return false;
-    } else if ($type == 'fqdn' && @tool_validate_fqdn($value) !== false) {
+    } else if ($type == 'fqdn' && tool_validate_fqdn($value) !== false) {
         return true;
-    } else if ($type == 'fqdn-wildcard' && @tool_validate_fqdn($value, true) !== false) {
+    } else if ($type == 'fqdn-wildcard' && tool_validate_fqdn($value, true) !== false) {
         return true;
     }
 
@@ -334,4 +334,12 @@ function tool_validate_fqdn($domain, $allow_wildcard = false)
         return false;
     }
     return !empty($domain) && preg_match($pattern, $domain) > 0;
+}
+
+function tool_is_http_request()
+{
+    if (isset($_SERVER['REMOTE_ADDR'])) {
+        return true;
+    }
+    return false;
 }

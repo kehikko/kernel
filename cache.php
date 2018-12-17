@@ -89,20 +89,71 @@ function cache_clear()
     return true;
 }
 
+/**
+ * Write data to system cache.
+ *
+ * @param  string $file filename under system cache (without any path!)
+ * @param  mixed  $data data to write
+ * @return bool   true if write ok, false otherwise
+ */
+function cache_write_system_data(string $file, $data)
+{
+    /* file by possible caching method */
+    if (extension_loaded('igbinary')) {
+        $file = cfg_system_file('cache', null, $file . '.igbinary');
+        $data = igbinary_serialize($data);
+    } else {
+        $file = cfg_system_file('cache', null, $file . '.json');
+        $data = json_encode($data);
+    }
+    /* apply what was asked */
+    if ($file) {
+        log_notice('Writing system cache data to file: ' . $file);
+        log_if_err(!file_put_contents($file, $data), 'Failed writing system cache data to file: ' . $file);
+    } else {
+        log_err('System cache file creation failed, file: ' . $file);
+    }
+}
+
+/**
+ * Read data from system cache.
+ *
+ * @param  string $file filename under system cache (without any path!)
+ * @return mixed  data read or null on errors
+ */
+function cache_read_system_data(string $file)
+{
+    $data = null;
+    /* file by possible caching method */
+    if (extension_loaded('igbinary')) {
+        $file = cfg_system_file('cache', null, $file . '.igbinary', false);
+        $data = $file ? igbinary_unserialize(file_get_contents($file)) : null;
+    } else {
+        $file = cfg_system_file('cache', null, $file . '.json', false);
+        $data = $file ? json_decode(file_get_contents($file), true) : null;
+    }
+    /* check for errors */
+    if ($data === null) {
+        log_err('System cache file read failed, file: ' . $file);
+    }
+    return $data;
+}
+
 function cache_config()
 {
-    if (cfg(['setup', 'config', 'cache']) !== true) {
-        log_warn('Configuration caching is disabled, caching will not take effect until enabled');
+    if (cfg(['setup', 'config', 'cache']) === true) {
+        cache_write_system_data('configuration.cache', cfg_init());
+    } else {
+        log_warn('Configuration caching is disabled, will not write cache until enabled');
     }
-    log_notice('Configuration cache file created');
     return true;
 }
 
 function cache_translations()
 {
+    cache_write_system_data('translations.cache', tr_init());
     if (cfg(['setup', 'translations', 'cache']) !== true) {
         log_warn('Translations caching is disabled, caching will not take effect until enabled');
     }
-    log_notice('Translations cache file created');
     return true;
 }

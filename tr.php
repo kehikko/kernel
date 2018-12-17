@@ -6,17 +6,22 @@ function tr_init()
     if (is_array($translations)) {
         return $translations;
     }
+
+    /* try cache, only when using http */
+    if (cfg(['setup', 'translations', 'cache']) === true && tool_is_http_request()) {
+        /* this file is created by cache_translations() in cache.php */
+        $translations = cache_read_system_data('translations.cache');
+        if ($translations) {
+            log_verbose('Translations loaded from cache');
+            return $translations;
+        }
+    }
+
+    /* need to load everything */
     $translations = [];
 
     /* find and load translations */
-    $translation_files = [];
-    foreach (tool_system_find_files(['translations.yml']) as $file) {
-        $translation_files[] = $file;
-    }
-    /* then local translations, they override "static" ones */
-    foreach (tool_system_find_files(['translations-local.yml']) as $file) {
-        $translation_files[] = $file;
-    }
+    $translation_files = array_merge(tool_system_find_files(['translations.yml']), tool_system_find_files(['translations-local.yml']));
 
     /* anonymous filler function */
     $filler = function ($lang, $data, $prefixes = []) use (&$filler, &$translations) {

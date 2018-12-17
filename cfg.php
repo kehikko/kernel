@@ -1,13 +1,27 @@
 <?php
 
-function cfg_init(string $cfg_file = null)
+function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
 {
     static $cfg = null;
-
     if ($cfg !== null) {
         return $cfg;
     }
 
+    /* try cache, only when using http */
+    if (is_string($cfg_cache_file) && is_file($cfg_cache_file) && tool_is_http_request()) {
+        /* this file is written by cache_config() in config.php */
+        if (extension_loaded('igbinary')) {
+            $cfg = igbinary_unserialize(@file_get_contents($cfg_cache_file));
+        } else {
+            $cfg = json_decode(@file_get_contents($cfg_cache_file), true);
+        }
+        if ($cfg) {
+            log_verbose('Configuration loaded from cache');
+            return $cfg;
+        }
+    }
+
+    /* use default? */
     if (!$cfg_file) {
         $cfg_file = __DIR__ . '/../../../config/config.yml';
     }
@@ -161,4 +175,35 @@ function cfg_debug()
 {
     $cfg = cfg_init();
     return $cfg['setup']['debug'] === true;
+}
+
+function cfg_system_file(string $type, $postfix = null, string $filename = '', $create = true)
+{
+    if (is_array($postfix)) {
+        $postfix = implode('/', $postfix);
+    }
+    $path = cfg(['path', $type]);
+    if (!is_string($path)) {
+        log_err('Tried to use system file with invalid type: ' . $type);
+        return false;
+    }
+    $path = $path . '/__kehikko' . (is_string($postfix) ? '/' . $postfix : '');
+    if (!file_exists($path)) {
+        mkdir($path, 0700, true);
+    }
+    if (!is_dir($path)) {
+        log_err('Failed to create system ' . $type . ' (sub-)path: ' . $path);
+        return false;
+    }
+    if (strlen($filename) > 0) {
+        if ($create && !file_exists($path . '/' . $filename)) {
+            touch($path . '/' . $filename);
+        }
+        if (!is_file($path . '/' . $filename)) {
+            log_err('System ' . $type . ' file ' . ($create ? 'could not be created' : 'does not exists') . ': ' . $path . '/' . $filename);
+            return false;
+        }
+        return $path . '/' . $filename;
+    }
+    return $path;
 }
