@@ -114,6 +114,11 @@ function tool_call_parse($call, array $args = [], $log = true)
         return null;
     }
 
+    /* if create new object (call constructor) */
+    if ($parts[1] == '') {
+        return ['object' => $class, 'method' => null, 'args' => $args];
+    }
+
     /* check that reflected class has method we should be calling */
     if (!$class->hasMethod($parts[1])) {
         log_if_err($log, 'Call parsing failed, method does not exist: ' . $call['call']);
@@ -154,6 +159,9 @@ function tool_call($call, array $args = [], $log = true, $silent = false)
         if (isset($reflect['method'])) {
             $called = true;
             $r      = $reflect['method']->invokeArgs($reflect['object'], $reflect['args']);
+        } else if (isset($reflect['object'])) {
+            $called = true;
+            $r      = $reflect['object']->newInstanceArgs($reflect['args']);
         } else if (isset($reflect['function'])) {
             $called = true;
             $r      = $reflect['function']->invokeArgs($reflect['args']);

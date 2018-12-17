@@ -20,14 +20,9 @@ function cache($object = null, $use_cfg = true)
         return $cache;
     }
     /* if config has settings for caching */
-    $class = cfg(['cache', 'class']);
-    if ($use_cfg && is_string($class)) {
-        if (class_exists($class)) {
-            $cache = new $class(cfg(['cache', 'driver']), cfg(['cache', 'config']));
-            return $cache;
-        } else {
-            log_err('Cache class not found: ' . $class);
-        }
+    if ($use_cfg && is_string(cfg(['cache', 'call']))) {
+        $cache = tool_call(cfg(['cache']));
+        return $cache;
     }
     /* initialize with default null driver */
     $cache = new class
