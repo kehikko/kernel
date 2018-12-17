@@ -18,9 +18,9 @@ function tool_yaml_load(array $files, bool $log_errors = true)
             $content = \Symfony\Component\Yaml\Yaml::parse($content);
         } catch (Exception $e) {
             if ($log_errors) {
-                log_err('unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+                log_err('Unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
             } else {
-                error_log('unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+                error_log('Unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
             }
             continue;
         }
@@ -59,7 +59,7 @@ function tool_call_parse($call, array $args = [], $log = true)
         $all_args = array_merge($all_args, ['null' => null, 'true' => true, 'false' => false]);
         /* check that argument list is terminated */
         if (substr($parts[1], -1) != ')') {
-            log_err('call parsing failed, missing ")" from end of call {0}', [$call['call']]);
+            log_err('Call parsing failed, missing ")" from end of call {0}', [$call['call']]);
             return null;
         }
         /* parse argument names */
@@ -75,7 +75,7 @@ function tool_call_parse($call, array $args = [], $log = true)
                 tool_validate('int', $name); /* this converts value ($name) to int if it can be done */
                 $args[] = $name;
             } else if (!array_key_exists($name, $all_args)) {
-                log_err('call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
+                log_err('Call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
                 return null;
             } else {
                 $args[] = $all_args[$name];
@@ -89,7 +89,7 @@ function tool_call_parse($call, array $args = [], $log = true)
     /* function call */
     if (count($parts) == 1) {
         if (!function_exists($parts[0])) {
-            log_if_err($log, 'call parsing failed, function does not exist: ' . $call['call']);
+            log_if_err($log, 'Call parsing failed, function does not exist: ' . $call['call']);
             return null;
         }
         return ['function' => new ReflectionFunction($parts[0]), 'args' => $args];
@@ -104,19 +104,19 @@ function tool_call_parse($call, array $args = [], $log = true)
         /* given argument is an object already that we want to use */
         $object = $all_args[$parts[0]];
         if (!method_exists($object, $parts[1])) {
-            log_if_err($log, 'call parsing failed, method does not exist: {0}@{1}', [get_class($object), $parts[1]]);
+            log_if_err($log, 'Call parsing failed, method does not exist: {0}@{1}', [get_class($object), $parts[1]]);
             return null;
         }
         $method = new ReflectionMethod($object, $parts[1]);
         return ['object' => $object, 'method' => $method, 'args' => $args];
     } else {
-        log_if_err($log, 'call parsing failed, class or variable does not exist or is not a class: ' . $call['call']);
+        log_if_err($log, 'Call parsing failed, class or variable does not exist or is not a class: ' . $call['call']);
         return null;
     }
 
     /* check that reflected class has method we should be calling */
     if (!$class->hasMethod($parts[1])) {
-        log_if_err($log, 'call parsing failed, method does not exist: ' . $call['call']);
+        log_if_err($log, 'Call parsing failed, method does not exist: ' . $call['call']);
         return null;
     }
     $method = $class->getMethod($parts[1]);
@@ -128,7 +128,7 @@ function tool_call_parse($call, array $args = [], $log = true)
 
     /* method is not static, check if class can be constructed without parameters */
     if ($class->hasMethod('__construct') && $class->getMethod('__construct')->getNumberOfRequiredParameters() > 0) {
-        log_if_err($log, 'call parsing failed, trying to use a non-static method with class that requires parameters for constructor: ' . $call['call']);
+        log_if_err($log, 'Call parsing failed, trying to use a non-static method with class that requires parameters for constructor: ' . $call['call']);
         return null;
     }
 
@@ -164,14 +164,14 @@ function tool_call($call, array $args = [], $log = true, $silent = false)
         if ($called) {
             /* exception if not silent mode */
             if (!$silent && !tool_call_successful($call, $r)) {
-                throw new Exception('failed calling dynamic function, see log for details');
+                throw new Exception('Failed calling dynamic function, see log for details');
             }
             return $r;
         }
     }
     /* nothing done, log error and return null */
     if (!$silent) {
-        throw new Exception('failed calling dynamic function, see log for details');
+        throw new Exception('Failed calling dynamic function, see log for details');
     }
     return null;
 }
@@ -209,7 +209,7 @@ function tool_call_successful($call, $returned)
             }
         }
         if ($n < 1) {
-            log_debug('call failed return value check (no matching success value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+            log_debug('Call failed return value check (no matching success value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
         }
         return $n > 0;
     } else if (isset($call['fail'])) {
@@ -217,11 +217,11 @@ function tool_call_successful($call, $returned)
         foreach ($types as $type) {
             if (is_string($type)) {
                 if (tool_validate($type, $returned, false)) {
-                    log_debug('call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+                    log_debug('Call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
                     return false;
                 }
             } else if ($type === $returned) {
-                log_debug('call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
+                log_debug('Call failed return value check (matching fail value), call: {call}, returned type: {value}', ['call' => $call['call'], 'value' => gettype($returned)]);
                 return false;
             }
         }

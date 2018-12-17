@@ -24,7 +24,7 @@ function emit(string $signal = null, array $args = [])
 
     $signals = cfg(['signals', $signal], array());
     if (!is_array($signals)) {
-        log_record(LOG_ERR, 'invalid signal configuration: {name}', ['name' => $signal], false);
+        log_record(LOG_ERR, 'Invalid signal configuration: {name}', ['name' => $signal], false);
         return;
     }
 
@@ -35,7 +35,7 @@ function emit(string $signal = null, array $args = [])
         } else if (is_a($reflect, 'ReflectionFunction')) {
             $reflect->invokeArgs($args);
         } else {
-            log_record(LOG_ERR, 'invalid signal configuration: {name}, index: {index}', ['name' => $signal, 'index' => $index], false);
+            log_record(LOG_ERR, 'Invalid signal configuration: {name}, index: {index}', ['name' => $signal, 'index' => $index], false);
         }
     }
 }

@@ -1,17 +1,16 @@
 <?php
 
-function error_handle($severity, $message, $file, $line)
-{
+set_error_handler(function ($severity, $message, $file, $line) {
     if (!(error_reporting() & $severity)) {
         /* this error code is not included in error_reporting */
         return;
     }
-    log_crit($file . ':' . $line . ': ' . $message);
-    throw new ErrorException($message, 0, $severity, $file, $line);
-}
-// set_error_handler('error_handle');
-
-// function error_exception_handle() {
-    
-// }
-// set_exception_handler('error_exception_handle');
+    if (in_array($severity, [E_WARNING, E_USER_WARNING, E_DEPRECATED, E_USER_DEPRECATED])) {
+        log_warn($file . ':' . $line . ': ' . $message);
+    } else if (in_array($severity, [E_NOTICE, E_USER_NOTICE])) {
+        log_notice($file . ':' . $line . ': ' . $message);
+    } else {
+        log_crit($file . ':' . $line . ': ' . $message);
+        throw new ErrorException($message, 0, $severity, $file, $line);
+    }
+});

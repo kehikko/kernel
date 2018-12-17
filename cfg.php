@@ -15,7 +15,7 @@ function cfg_init(string $cfg_file = null)
     /* load base config */
     $cfg = tool_yaml_load([$cfg_file, dirname($cfg_file) . '/' . basename($cfg_file, '.yml') . '-local.yml'], false);
     if (empty($cfg)) {
-        throw new Exception('base configuration file is invalid, path: ' . $cfg_file);
+        throw new Exception('Base configuration file is invalid, path: ' . $cfg_file);
     }
 
     /* setup defaults, if something is not already set in config */
@@ -52,7 +52,7 @@ function cfg_init(string $cfg_file = null)
         if ($name == 'root') {
             /* root must always be absolute */
             if ($value[0] != '/') {
-                throw new Exception('configuration error, root path must be absolute!');
+                throw new Exception('Configuration error, root path must be absolute!');
             }
             continue;
         }
@@ -63,8 +63,8 @@ function cfg_init(string $cfg_file = null)
         }
         /* check that each path actually exists */
         $path = realpath($value);
-        if (!$path) {
-            throw new Exception('non-accesible path for ' . $name . ' set in config: ' . $value);
+        if (!$path || !is_dir($path)) {
+            throw new Exception('Non-accesible path for ' . $name . ' set in config: ' . $value);
         }
         /* set path value to resolved one */
         $cfg['path'][$name] = $path;
@@ -76,6 +76,39 @@ function cfg_init(string $cfg_file = null)
         putenv('LC_ALL=' . $locale);
     }
 
+    /* auto-expand strings: expansion result can be other than string if only singular value is pointed at and it is not a string */
+    $expand = function (&$c) use (&$expand) {
+        if (is_array($c)) {
+            foreach ($c as &$subc) {
+                $expand($subc);
+            }
+        } else if (is_string($c)) {
+            /* do auto-expansion at most five(5) times */
+            for ($i = 0; $i < 5 && preg_match_all('/{[a-zA-Z0-9:\\\\]+}/', $c, $matches, PREG_OFFSET_CAPTURE) > 0; $i++) {
+                $replaced = 0;
+                $parts    = [];
+                $left     = 0;
+                foreach ($matches[0] as $match) {
+                    $key     = trim($match[0], '{}');
+                    $parts[] = substr($c, $left, $match[1] - $left);
+                    /* we are able to call cfg() here since $cfg is set, even though not fully initialized */
+                    $parts[] = cfg($key, $match[0]);
+                    $left    = $match[1] + strlen($match[0]);
+                    $replaced++;
+                }
+                $left = substr($c, $left);
+                if ($replaced == 1 && $left == '' && $parts[0] == '' && !is_string($parts[1])) {
+                    /* only singlular replacement and it pointed to non-string value, set directly */
+                    $c = $parts[1];
+                } else {
+                    /* string value replacement */
+                    $c = implode('', $parts) . $left;
+                }
+            }
+        }
+    };
+    $expand($cfg);
+
     return $cfg;
 }
 
@@ -83,13 +116,12 @@ function cfg_init(string $cfg_file = null)
  * Return value from configuration, or null if value with given key-chain
  * is not found.
  *
- * @param  mixed $arg1   key or object which is used to find config value under modules-section
- * @param  mixed $arg2   default or key depending on first argument
- * @param  mixed $arg3   default or ignored depending on first argument
- * @param  mixed $expand auto-expand return value (call cfg() recursively) if it is a string, default is max. 5 recursions
+ * @param  mixed $arg1 key or object which is used to find config value under modules-section
+ * @param  mixed $arg2 default or key depending on first argument
+ * @param  mixed $arg3 default or ignored depending on first argument
  * @return mixed value of the given key (can be array etc)
  */
-function cfg($arg1, $arg2 = null, $arg3 = null, $expand = 5)
+function cfg($arg1, $arg2 = null, $arg3 = null)
 {
     $path    = null;
     $default = null;
@@ -117,21 +149,6 @@ function cfg($arg1, $arg2 = null, $arg3 = null, $expand = 5)
             $value = $default;
             break;
         }
-    }
-
-    /* auto-expand strings */
-    if ($expand > 0 && is_string($value) && preg_match_all('/{[a-zA-Z0-9:\\\\]+}/', $value, $matches, PREG_OFFSET_CAPTURE) > 0) {
-        $parts = [];
-        $left  = 0;
-        foreach ($matches[0] as $match) {
-            $key     = trim($match[0], '{}');
-            $parts[] = substr($value, $left, $match[1] - $left);
-            $parts[] = cfg($key, null, null, $expand - 1);
-            $left    = $match[1] + strlen($match[0]);
-        }
-        $value = implode('', $parts) . substr($value, $left);
-    } else if ($expand === 0) {
-        throw new Exception('recursion limit exceeded when calling cfg(' . implode(':', $path) . '), your configuration has errors!');
     }
 
     return $value;

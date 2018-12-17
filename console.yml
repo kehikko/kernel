@@ -1,4 +1,10 @@
 commands:
   cache:clear:
-    description: clear cache
+    description: Clear cache
     call: cache_clear
+  cache:config:
+    description: Create configuration cache file
+    call: cache_config
+  cache:translations:
+    description: Create translations cache file
+    call: cache_translations
