@@ -38,7 +38,7 @@ function tr_init()
     return $translations;
 }
 
-function tr(string $content, array $args = [])
+function tr(string $content, array $args = [], $expand = 3)
 {
     $translations = tr_init();
     $lang         = cfg(['setup', 'lang'], 'en');
@@ -46,16 +46,6 @@ function tr(string $content, array $args = [])
     if (isset($translations[$lang]) && is_array($translations[$lang])) {
         $data = $translations[$lang];
     }
-
-    /* session related, these might change any moment */
-    $data['{session:username}'] = '';
-    // if ($kernel->session) {
-    //     $username = $kernel->session->get('username');
-    //     if (!$username) {
-    //         $username = '';
-    //     }
-    // }
-    $data['{session:lang}'] = $lang;
 
     /* append user defined args */
     foreach ($args as $key => $val) {
@@ -65,5 +55,11 @@ function tr(string $content, array $args = [])
     }
 
     /* do replace in content */
-    return strtr($content, $data);
+    if ($expand > 0) {
+        for ($i = 0; $i < $expand; $i++) {
+            $content = strtr($content, $data);
+        }
+    }
+
+    return $content;
 }
