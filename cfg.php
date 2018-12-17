@@ -21,20 +21,18 @@ function cfg_init(string $cfg_file = null)
     /* setup defaults, if something is not already set in config */
     $cfg_default = array(
         'setup' => array(
-            'debug'     => false,
-            'formats'   => array('html', 'json'),
-            'lang'      => 'en',
-            'languages' => array('en' => 'English'),
+            'debug' => false,
+            'lang'  => 'en',
         ),
-        'url'  => array(
+        'url'   => array(
             'base'   => '/',
             'error'  => '/404/',
             'login'  => '/login/',
             'assets' => '/',
         ),
-        'path' => array(
+        'path'  => array(
             'root'    => realpath(dirname($cfg_file) . '/../'),
-            'config'  => 'config',
+            'config'  => realpath(dirname($cfg_file)),
             'modules' => 'modules',
             'routes'  => 'routes',
             'views'   => 'views',
@@ -58,23 +56,22 @@ function cfg_init(string $cfg_file = null)
             }
             continue;
         }
-
         /* if there is no slash ('/') as first character, assume this is not an absolute path */
         if ($value[0] !== '/') {
             /* relative path, prepend with root */
             $value = $cfg['path']['root'] . '/' . $value;
         }
-
+        /* check that each path actually exists */
         $path = realpath($value);
         if (!$path) {
-            throw new Exception('non-accesible path set in config: ' . $value);
+            throw new Exception('non-accesible path for ' . $name . ' set in config: ' . $value);
         }
-
+        /* set path value to resolved one */
         $cfg['path'][$name] = $path;
     }
 
     /* set locale if defined */
-    if (isset($cfg['setup']['locale'])) {
+    if (isset($cfg['setup']['locale']) && is_string($cfg['setup']['locale'])) {
         $locale = setlocale(LC_ALL, $cfg['setup']['locale']);
         putenv('LC_ALL=' . $locale);
     }
@@ -86,13 +83,13 @@ function cfg_init(string $cfg_file = null)
  * Return value from configuration, or null if value with given key-chain
  * is not found.
  *
- * @param  mixed $arg1 key or object which is used to find config value under modules-section
- * @param  mixed $arg2 default or key depending on first argument
- * @param  mixed $arg3 default or ignored depending on first argument
- * @param  bool  $tr   auto-translate return value (call tr()) if it is a string, default true
+ * @param  mixed $arg1   key or object which is used to find config value under modules-section
+ * @param  mixed $arg2   default or key depending on first argument
+ * @param  mixed $arg3   default or ignored depending on first argument
+ * @param  mixed $expand auto-expand return value (call cfg() recursively) if it is a string, default is max. 5 recursions
  * @return mixed value of the given key (can be array etc)
  */
-function cfg($arg1, $arg2 = null, $arg3 = null, bool $tr = true)
+function cfg($arg1, $arg2 = null, $arg3 = null, $expand = 5)
 {
     $path    = null;
     $default = null;
@@ -122,9 +119,19 @@ function cfg($arg1, $arg2 = null, $arg3 = null, bool $tr = true)
         }
     }
 
-    /* auto translate strings */
-    if ($tr && is_string($value)) {
-        $value = tr($value);
+    /* auto-expand strings */
+    if ($expand > 0 && is_string($value) && preg_match_all('/{[a-zA-Z0-9:\\\\]+}/', $value, $matches, PREG_OFFSET_CAPTURE) > 0) {
+        $parts = [];
+        $left  = 0;
+        foreach ($matches[0] as $match) {
+            $key     = trim($match[0], '{}');
+            $parts[] = substr($value, $left, $match[1] - $left);
+            $parts[] = cfg($key, null, null, $expand - 1);
+            $left    = $match[1] + strlen($match[0]);
+        }
+        $value = implode('', $parts) . substr($value, $left);
+    } else if ($expand === 0) {
+        throw new Exception('recursion limit exceeded when calling cfg(' . implode(':', $path) . '), your configuration has errors!');
     }
 
     return $value;
@@ -135,5 +142,6 @@ function cfg($arg1, $arg2 = null, $arg3 = null, bool $tr = true)
  */
 function cfg_debug()
 {
-    return cfg(['setup', 'debug']) === true;
+    $cfg = cfg_init();
+    return $cfg['setup']['debug'] === true;
 }

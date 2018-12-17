@@ -2,35 +2,6 @@
 
 require_once __DIR__ . '/../../autoload.php';
 
-$x    = microtime(true);
-$data = cfg_init();
-$x    = microtime(true) - $x;
-echo "normal cfg init took  $x seconds\n";
-
-$x    = microtime(true);
-$data = (include ('config.php'));
-$x    = microtime(true) - $x;
-echo "include init took     $x seconds\n";
-
-$x    = microtime(true);
-$data = unserialize(file_get_contents('serialized.php'));
-$x    = microtime(true) - $x;
-echo "unserialize init took $x seconds\n";
-
-$x    = microtime(true);
-$data = json_decode(file_get_contents('serialized.json'), true);
-$x    = microtime(true) - $x;
-echo "json init took        $x seconds\n";
-
-$x    = microtime(true);
-$data = igbinary_unserialize(file_get_contents('igbinary.dump'));
-$x    = microtime(true) - $x;
-echo "igbinary init took    $x seconds\n";
-
-file_put_contents('pretty.json', json_encode($data, JSON_PRETTY_PRINT));
-
-exit;
-
 /* start profiler automatically if it is found and enabled */
 if (function_exists('profiler_start') && cfg(['profiler', 'console', 'enabled']) === true) {
     profiler_start();

@@ -42,5 +42,7 @@ function cache($object = null, $use_cfg = true)
 
 function cache_clear()
 {
+    echo tr('{title:site} : {title:home}')."\n";
+    // echo cfg(['cache', 'config', 'path'])."\n";
     // echo var_export(cfg_init());
 }
