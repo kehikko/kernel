@@ -1,6 +1,6 @@
 <?php
 
-function cache($object = null)
+function cache($object = null, $use_cfg = true)
 {
     static $cache = null;
     /* (re-)initialize with user given object */
@@ -11,6 +11,14 @@ function cache($object = null)
     /* if cache has already been initialized */
     if ($cache !== null) {
         return $cache;
+    }
+    /* if config has settings for caching */
+    if ($use_cfg) {
+        $class = cfg(['cache', 'class'], null, null, false);
+        if (class_exists($class)) {
+            $cache = new $class(cfg(['cache', 'driver'], null, null, false), cfg(['cache', 'config'], null, null, false));
+            return $cache;
+        }
     }
     /* initialize with default null driver */
     $cache = new class
@@ -30,4 +38,9 @@ function cache($object = null)
         public function has($key) { return false; }
     };
     return $cache;
+}
+
+function cache_clear()
+{
+    // echo var_export(cfg_init());
 }

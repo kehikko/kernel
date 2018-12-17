@@ -3,7 +3,6 @@
 function tool_yaml_load(array $files, bool $log_errors = true)
 {
     $data = [];
-
     foreach ($files as $file) {
         if (!is_file($file)) {
             continue;
@@ -18,7 +17,11 @@ function tool_yaml_load(array $files, bool $log_errors = true)
         {
             $content = \Symfony\Component\Yaml\Yaml::parse($content);
         } catch (Exception $e) {
-            log_if_err($log_errors, 'unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+            if ($log_errors) {
+                log_err('unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+            } else {
+                error_log('unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+            }
             continue;
         }
 
@@ -233,7 +236,7 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
 
     /* check system paths for given file: config, modules, routes and vendor */
     if (!is_array($paths)) {
-        $paths = [cfg(['paths', 'config']), cfg(['paths', 'vendor']), cfg(['paths', 'modules']), cfg(['paths', 'routes'])];
+        $paths = [cfg(['path', 'config']), cfg(['path', 'vendor']), cfg(['path', 'modules']), cfg(['path', 'routes'])];
     }
     foreach ($paths as $path) {
         $files = scandir($path);

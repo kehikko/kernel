@@ -26,13 +26,13 @@ function cfg_init(string $cfg_file = null)
             'lang'      => 'en',
             'languages' => array('en' => 'English'),
         ),
-        'urls'  => array(
+        'url'  => array(
             'base'   => '/',
             'error'  => '/404/',
             'login'  => '/login/',
             'assets' => '/',
         ),
-        'paths' => array(
+        'path' => array(
             'root'    => realpath(dirname($cfg_file) . '/../'),
             'config'  => 'config',
             'modules' => 'modules',
@@ -49,7 +49,7 @@ function cfg_init(string $cfg_file = null)
     $cfg = array_replace_recursive($cfg_default, $cfg);
 
     /* add root to paths that are relative */
-    foreach ($cfg['paths'] as $name => $value) {
+    foreach ($cfg['path'] as $name => $value) {
         /* skip root itself */
         if ($name == 'root') {
             /* root must always be absolute */
@@ -62,7 +62,7 @@ function cfg_init(string $cfg_file = null)
         /* if there is no slash ('/') as first character, assume this is not an absolute path */
         if ($value[0] !== '/') {
             /* relative path, prepend with root */
-            $value = $cfg['paths']['root'] . '/' . $value;
+            $value = $cfg['path']['root'] . '/' . $value;
         }
 
         $path = realpath($value);
@@ -70,7 +70,7 @@ function cfg_init(string $cfg_file = null)
             throw new Exception('non-accesible path set in config: ' . $value);
         }
 
-        $cfg['paths'][$name] = $path;
+        $cfg['path'][$name] = $path;
     }
 
     /* set locale if defined */
@@ -78,7 +78,7 @@ function cfg_init(string $cfg_file = null)
         $locale = setlocale(LC_ALL, $cfg['setup']['locale']);
         putenv('LC_ALL=' . $locale);
     }
-    
+
     return $cfg;
 }
 

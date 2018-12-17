@@ -19,25 +19,32 @@ function tr_init()
     $replace['{server:group}'] = posix_getgrgid(getmygid())['name'];
 
     /* configuration */
-    $replace['{path:root}']    = cfg(['paths', 'root'], '', null, false);
-    $replace['{path:config}']  = cfg(['paths', 'config'], '', null, false);
-    $replace['{path:modules}'] = cfg(['paths', 'modules'], '', null, false);
-    $replace['{path:routes}']  = cfg(['paths', 'routes'], '', null, false);
-    $replace['{path:views}']   = cfg(['paths', 'views'], '', null, false);
-    $replace['{path:cache}']   = cfg(['paths', 'cache'], '', null, false);
-    $replace['{path:data}']    = cfg(['paths', 'data'], '', null, false);
-    $replace['{path:tmp}']     = cfg(['paths', 'tmp'], '', null, false);
-    $replace['{path:web}']     = cfg(['paths', 'web'], '', null, false);
-    $replace['{path:log}']     = cfg(['paths', 'log'], '', null, false);
-    $replace['{path:vendor}']  = cfg(['paths', 'vendor'], '', null, false);
-    $replace['{url:base}']     = cfg(['urls', 'base'], '', null, false);
-    $replace['{url:error}']    = cfg(['urls', 'error'], '', null, false);
-    $replace['{url:login}']    = cfg(['urls', 'login'], '', null, false);
-    $replace['{url:assets}']   = cfg(['urls', 'assets'], '', null, false);
+    $replace['{path:root}']    = cfg(['path', 'root'], '', null, false);
+    $replace['{path:config}']  = cfg(['path', 'config'], '', null, false);
+    $replace['{path:modules}'] = cfg(['path', 'modules'], '', null, false);
+    $replace['{path:routes}']  = cfg(['path', 'routes'], '', null, false);
+    $replace['{path:views}']   = cfg(['path', 'views'], '', null, false);
+    $replace['{path:cache}']   = cfg(['path', 'cache'], '', null, false);
+    $replace['{path:data}']    = cfg(['path', 'data'], '', null, false);
+    $replace['{path:tmp}']     = cfg(['path', 'tmp'], '', null, false);
+    $replace['{path:web}']     = cfg(['path', 'web'], '', null, false);
+    $replace['{path:log}']     = cfg(['path', 'log'], '', null, false);
+    $replace['{path:vendor}']  = cfg(['path', 'vendor'], '', null, false);
+    $replace['{url:base}']     = cfg(['url', 'base'], '', null, false);
+    $replace['{url:error}']    = cfg(['url', 'error'], '', null, false);
+    $replace['{url:login}']    = cfg(['url', 'login'], '', null, false);
+    $replace['{url:assets}']   = cfg(['url', 'assets'], '', null, false);
 
     /* find and load translations */
     $translation_files = [];
-    foreach (tool_system_find_files(['translations.yml']) as $file) {
+    /* avoid recursive loop by giving these manually */
+    $paths = [
+        cfg(['path', 'config'], '', null, false),
+        cfg(['path', 'vendor'], '', null, false),
+        cfg(['path', 'modules'], '', null, false),
+        cfg(['path', 'routes'], '', null, false),
+    ];
+    foreach (tool_system_find_files(['translations.yml'], $paths) as $file) {
         $translation_files[] = $file;
         $translation_files[] = dirname($file) . '/translations-local.yml';
     }
