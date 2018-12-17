@@ -1,0 +1,4 @@
+commands:
+  cache:clear:
+    description: clear cache
+    call: cache_clear
