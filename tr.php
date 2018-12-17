@@ -12,7 +12,10 @@ function tr_init()
     $translation_files = [];
     foreach (tool_system_find_files(['translations.yml']) as $file) {
         $translation_files[] = $file;
-        $translation_files[] = dirname($file) . '/translations-local.yml';
+    }
+    /* then local translations, they override "static" ones */
+    foreach (tool_system_find_files(['translations-local.yml']) as $file) {
+        $translation_files[] = $file;
     }
 
     /* anonymous filler function */
