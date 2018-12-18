@@ -11,6 +11,10 @@
     "symfony/yaml": "^4.2",
     "pear/console_commandline": "^1.2"
   },
+  "suggest": {
+    "symfony/cache": "Has support for PSR-16 caching",
+    "phpfastcache/phpfastcache": "Has support for PSR-16 caching"
+  },
   "bin": ["kehikko", "kehikko.php"],
   "autoload": {
     "files": ["autoload.php", "error.php", "tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "tr.php"]
