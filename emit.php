@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Emit a signal that can be cathed elsewhere in the software.
+ * Emit a signal that can be caught elsewhere in the software.
  *
  * When called without any arguments, emits a signal with the same exact
  * arguments as the function/method it was called in. Name of the signal
