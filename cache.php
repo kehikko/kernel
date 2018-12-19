@@ -4,50 +4,44 @@
  * Get a PSR-16 compatible cache object.
  *
  * @param  mixed   $object  set cache object to this, or give null to not change
- * @param  boolean $use_cfg if no valid cache object is found and this is true, load settings from config (default true)
  * @return object  PSR-16 cache object
  */
-function cache($object = null, $use_cfg = true)
+function cache($object = null)
 {
     static $cache = null;
-    /* (re-)initialize with user given object */
-    if (is_object($object)) {
-        $cache = $object;
-        return $cache;
-    }
-    /* if cache has already been initialized */
-    if ($cache !== null) {
-        return $cache;
-    }
-    /* if config has settings for caching */
-    if ($use_cfg && is_string(cfg(['cache', 'call']))) {
-        $cache = tool_call(cfg(['cache']));
+    if (cfg(['cache', 'enabled']) === true) {
+        /* (re-)initialize with user given object */
+        if (is_object($object)) {
+            $cache = $object;
+            return $cache;
+        }
+        /* if cache has already been initialized */
+        if ($cache !== null) {
+            return $cache;
+        }
+        /* if config has settings for caching */
+        if (is_string(cfg(['cache', 'call']))) {
+            $cache = tool_call(cfg(['cache']));
+            return $cache;
+        }
+    } else if ($cache !== null) {
+        /* if cache has already been initialized */
         return $cache;
     }
     /* initialize with default null driver */
-    $cache = new class
-
-    {
-        public function get($key, $default = null)
-        {return $default;}
-        public function set($key, $value, $ttl = null)
-        {return false;}
-        public function delete($key)
-        {return true;}
-        public function clear($key)
-        {return true;}
-        public function getMultiple($keys, $default = null)
-        {
+    $cache = new class {
+        public function get($key, $default = null) {return $default;}
+        public function set($key, $value, $ttl = null) {return false;}
+        public function delete($key) {return true;}
+        public function clear($key) {return true;}
+        public function getMultiple($keys, $default = null) {
             foreach ($keys as $key) {
                 yield $key => $default;
             }
         }
-        public function setMultiple($values, $ttl = null)
-        {return false;}
-        public function deleteMultiple($keys)
-        {return true;}
-        public function has($key)
-        {return false;}
+        public function setMultiple($values, $ttl = null) {return false;}
+        public function deleteMultiple($keys) {return true;}
+        public function has($key) {return false;}
     };
     return $cache;
 }
