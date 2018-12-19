@@ -31,7 +31,7 @@ define('LDC_BWHITE', "\033[47m");
 
 define('LOG_VERBOSE', LOG_DEBUG + 1);
 
-function log_record(int $priority, string $message, array $context = array(), $emit = true)
+function log_record(int $priority, string $message, array $context = [], $emit = true)
 {
     /* do not log debug messages if not in debug mode */
     if (!cfg_debug() && $priority >= LOG_DEBUG) {
@@ -131,108 +131,108 @@ function log_record(int $priority, string $message, array $context = array(), $e
     }
 }
 
-function log_verbose(string $message, array $context = array())
+function log_verbose(string $message, array $context = [])
 {
     log_record(LOG_VERBOSE, $message, $context);
 }
 
-function log_debug(string $message, array $context = array())
+function log_debug(string $message, array $context = [])
 {
     log_record(LOG_DEBUG, $message, $context);
 }
 
-function log_info(string $message, array $context = array())
+function log_info(string $message, array $context = [])
 {
     log_record(LOG_INFO, $message, $context);
 }
 
-function log_notice(string $message, array $context = array())
+function log_notice(string $message, array $context = [])
 {
     log_record(LOG_NOTICE, $message, $context);
 }
 
-function log_warn(string $message, array $context = array())
+function log_warning(string $message, array $context = [])
 {
     log_record(LOG_WARNING, $message, $context);
 }
 
-function log_err(string $message, array $context = array())
+function log_error(string $message, array $context = [])
 {
     log_record(LOG_ERR, $message, $context);
 }
 
-function log_crit(string $message, array $context = array())
+function log_critical(string $message, array $context = [])
 {
     log_record(LOG_CRIT, $message, $context);
 }
 
-function log_alert(string $message, array $context = array())
+function log_alert(string $message, array $context = [])
 {
     log_record(LOG_ALERT, $message, $context);
 }
 
-function log_emerg(string $message, array $context = array())
+function log_emergency(string $message, array $context = [])
 {
     log_record(LOG_EMERG, $message, $context);
 }
 
-function log_if_verbose($condition, string $message, array $context = array())
+function log_if_verbose($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_VERBOSE, $message, $context);
     }
 }
 
-function log_if_debug($condition, string $message, array $context = array())
+function log_if_debug($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_DEBUG, $message, $context);
     }
 }
 
-function log_if_info($condition, string $message, array $context = array())
+function log_if_info($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_INFO, $message, $context);
     }
 }
 
-function log_if_notice($condition, string $message, array $context = array())
+function log_if_notice($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_NOTICE, $message, $context);
     }
 }
 
-function log_if_warn($condition, string $message, array $context = array())
+function log_if_warning($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_WARNING, $message, $context);
     }
 }
 
-function log_if_err($condition, string $message, array $context = array())
+function log_if_error($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_ERR, $message, $context);
     }
 }
 
-function log_if_crit($condition, string $message, array $context = array())
+function log_if_critical($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_CRIT, $message, $context);
     }
 }
 
-function log_if_alert($condition, string $message, array $context = array())
+function log_if_alert($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_ALERT, $message, $context);
     }
 }
 
-function log_if_emerg($condition, string $message, array $context = array())
+function log_if_emergency($condition, string $message, array $context = [])
 {
     if ($condition) {
         log_record(LOG_EMERG, $message, $context);
