@@ -88,7 +88,7 @@ function cache_clear()
  *
  * @param  string $file filename under system cache (without any path!)
  * @param  mixed  $data data to write
- * @return bool   true if write ok, false otherwise
+ * @return mixed  full filename if write ok, false otherwise
  */
 function cache_write_system_data(string $file, $data)
 {
@@ -102,11 +102,16 @@ function cache_write_system_data(string $file, $data)
     }
     /* apply what was asked */
     if ($file) {
-        log_notice('Writing system cache data to file: ' . $file);
-        log_if_err(!file_put_contents($file, $data), 'Failed writing system cache data to file: ' . $file);
+        log_verbose('Writing system cache data to file: ' . $file);
+        if (!file_put_contents($file, $data)) {
+            log_error('Failed writing system cache data to file: ' . $file);
+            return false;
+        }
+        return $file;
     } else {
         log_error('System cache file creation failed, file: ' . $file);
     }
+    return false;
 }
 
 /**
@@ -135,17 +140,17 @@ function cache_read_system_data(string $file)
 
 function cache_config()
 {
-    if (cfg(['setup', 'config', 'cache']) === true) {
-        cache_write_system_data('configuration.cache', cfg_init());
-    } else {
-        log_warning('Configuration caching is disabled, will not write cache until enabled');
+    $file = cache_write_system_data('configuration.cache', cfg_init());
+    if ($file) {
+        log_info('Wrote configuration cache to file: ' . $file);
     }
     return true;
 }
 
 function cache_translations()
 {
-    cache_write_system_data('translations.cache', tr_init());
+    throw new Exception('not implemented');
+    $file = cache_write_system_data('translations.cache', tr_init());
     if (cfg(['setup', 'translations', 'cache']) !== true) {
         log_warning('Translations caching is disabled, caching will not take effect until enabled');
     }

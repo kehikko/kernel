@@ -114,6 +114,7 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
                 if ($replaced == 1 && $left == '' && $parts[0] == '' && !is_string($parts[1])) {
                     /* only singlular replacement and it pointed to non-string value, set directly */
                     $c = $parts[1];
+                    break;
                 } else {
                     /* string value replacement */
                     $c = implode('', $parts) . $left;
