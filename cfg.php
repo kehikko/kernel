@@ -98,7 +98,7 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
             }
         } else if (is_string($c)) {
             /* do auto-expansion at most five(5) times */
-            for ($i = 0; $i < 5 && preg_match_all('/{[a-zA-Z0-9:\\\\]+}/', $c, $matches, PREG_OFFSET_CAPTURE) > 0; $i++) {
+            for ($i = 0; $i < 5 && preg_match_all('/{[a-zA-Z0-9.\\\\]+}/', $c, $matches, PREG_OFFSET_CAPTURE) > 0; $i++) {
                 $replaced = 0;
                 $parts    = [];
                 $left     = 0;
@@ -142,18 +142,26 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
 
     /* check arguments */
     if (is_string($arg1) || is_array($arg1)) {
-        $path    = is_array($arg1) ? $arg1 : explode(':', $arg1);
+        $path    = is_array($arg1) ? $arg1 : explode('.', $arg1);
         $default = $arg2;
     } else if (is_object($arg1) && (is_string($arg2) || is_array($arg2))) {
-        $path = is_array($arg2) ? $arg2 : explode(':', $arg2);
+        $path = is_array($arg2) ? $arg2 : explode('.', $arg2);
         array_unshift($path, 'modules', get_class($arg1));
         $default = $arg3;
     } else {
         throw new Exception('invalid cfg() parameter');
     }
 
-    /* find value that was asked */
+    /* load configuration array */
     $value = cfg_init();
+
+    /* check for invalid characters (with the exception of accepting "\", these are from PSR-16 invalid key characters) */
+    if (strpbrk(implode('.', $path), '{}()/@:')) {
+        $caller = debug_backtrace(0, 2);
+        log_warning('Not recommended character, one of these "{}()/@:", in configuration key: {0} ({1}:{2})', [implode('.', $path), $caller[0]['file'], $caller[0]['line']]);
+    }
+
+    /* find value that was asked */
     foreach ($path as $key) {
         if (isset($value[$key])) {
             /* key found, continue to next key */
@@ -184,7 +192,7 @@ function cfg_system_file(string $type, $postfix = null, string $filename = '', $
     }
     $path = cfg(['path', $type]);
     if (!is_string($path)) {
-        log_err('Tried to use system file with invalid type: ' . $type);
+        log_error('Tried to use system file with invalid type: ' . $type);
         return false;
     }
     $path = $path . '/__kehikko' . (is_string($postfix) ? '/' . $postfix : '');
@@ -192,7 +200,7 @@ function cfg_system_file(string $type, $postfix = null, string $filename = '', $
         mkdir($path, 0700, true);
     }
     if (!is_dir($path)) {
-        log_err('Failed to create system ' . $type . ' (sub-)path: ' . $path);
+        log_error('Failed to create system ' . $type . ' (sub-)path: ' . $path);
         return false;
     }
     if (strlen($filename) > 0) {
@@ -200,7 +208,7 @@ function cfg_system_file(string $type, $postfix = null, string $filename = '', $
             touch($path . '/' . $filename);
         }
         if (!is_file($path . '/' . $filename)) {
-            log_err('System ' . $type . ' file ' . ($create ? 'could not be created' : 'does not exists') . ': ' . $path . '/' . $filename);
+            log_error('System ' . $type . ' file ' . ($create ? 'could not be created' : 'does not exists') . ': ' . $path . '/' . $filename);
             return false;
         }
         return $path . '/' . $filename;

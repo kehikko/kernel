@@ -18,7 +18,7 @@ function tool_yaml_load(array $files, bool $log_errors = true)
             $content = \Symfony\Component\Yaml\Yaml::parse($content);
         } catch (Exception $e) {
             if ($log_errors) {
-                log_err('Unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
+                log_error('Unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
             } else {
                 error_log('Unable to parse yaml file contents, file: ' . $file . ', error: ' . $e->getMessage());
             }
@@ -59,7 +59,7 @@ function tool_call_parse($call, array $args = [], $log = true)
         $all_args = array_merge($all_args, ['null' => null, 'true' => true, 'false' => false]);
         /* check that argument list is terminated */
         if (substr($parts[1], -1) != ')') {
-            log_err('Call parsing failed, missing ")" from end of call {0}', [$call['call']]);
+            log_error('Call parsing failed, missing ")" from end of call {0}', [$call['call']]);
             return null;
         }
         /* parse argument names */
@@ -75,7 +75,7 @@ function tool_call_parse($call, array $args = [], $log = true)
                 tool_validate('int', $name); /* this converts value ($name) to int if it can be done */
                 $args[] = $name;
             } else if (!array_key_exists($name, $all_args)) {
-                log_err('Call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
+                log_error('Call parsing failed, missing argument "{arg}" for call {call}', ['call' => $call['call'], 'arg' => $name]);
                 return null;
             } else {
                 $args[] = $all_args[$name];

@@ -29,11 +29,13 @@ function emit(string $signal = null, array $args = [])
     }
 
     foreach ($signals as $index => $signal) {
-        $reflect = tool_call_parse($signal, [], false);
-        if (is_array($reflect)) {
-            $reflect['method']->invokeArgs($reflect['object'], $args);
-        } else if (is_a($reflect, 'ReflectionFunction')) {
-            $reflect->invokeArgs($args);
+        $reflect = tool_call_parse($signal, $args, false);
+        if (isset($reflect['method'])) {
+            $reflect['method']->invokeArgs($reflect['object'], $reflect['args']);
+        } else if (isset($reflect['object'])) {
+            $reflect['object']->newInstanceArgs($reflect['args']);
+        } else if (isset($reflect['function'])) {
+            $reflect['function']->invokeArgs($reflect['args']);
         } else {
             log_record(LOG_ERR, 'Invalid signal configuration: {name}, index: {index}', ['name' => $signal, 'index' => $index], false);
         }

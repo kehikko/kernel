@@ -30,7 +30,12 @@ function tr_init()
             if (is_array($val)) {
                 $filler($lang, $val, $prefixes);
             } else if (is_string($val)) {
-                $translations[$lang]['{' . implode(':', $prefixes) . '}'] = $val;
+                $key = implode('.', $prefixes);
+                /* check for invalid characters (these are from PSR-16 invalid key characters) */
+                if (strpbrk($key, '{}()/\\@:')) {
+                    log_warning('Not recommended character, one of these "{}()/\\@:", in translation key: ' . $key);
+                }
+                $translations[$lang]['{' . $key . '}'] = $val;
             }
             array_pop($prefixes);
         }

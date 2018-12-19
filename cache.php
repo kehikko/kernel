@@ -74,7 +74,7 @@ function cache_clear()
             continue;
         }
         if (!$rm($path . '/' . $file)) {
-            log_err('cache clear failed');
+            log_error('Cache clear failed');
             return false;
         }
     }
@@ -105,7 +105,7 @@ function cache_write_system_data(string $file, $data)
         log_notice('Writing system cache data to file: ' . $file);
         log_if_err(!file_put_contents($file, $data), 'Failed writing system cache data to file: ' . $file);
     } else {
-        log_err('System cache file creation failed, file: ' . $file);
+        log_error('System cache file creation failed, file: ' . $file);
     }
 }
 
@@ -128,7 +128,7 @@ function cache_read_system_data(string $file)
     }
     /* check for errors */
     if ($data === null) {
-        log_err('System cache file read failed, file: ' . $file);
+        log_error('System cache file read failed, file: ' . $file);
     }
     return $data;
 }
@@ -138,7 +138,7 @@ function cache_config()
     if (cfg(['setup', 'config', 'cache']) === true) {
         cache_write_system_data('configuration.cache', cfg_init());
     } else {
-        log_warn('Configuration caching is disabled, will not write cache until enabled');
+        log_warning('Configuration caching is disabled, will not write cache until enabled');
     }
     return true;
 }
@@ -147,7 +147,7 @@ function cache_translations()
 {
     cache_write_system_data('translations.cache', tr_init());
     if (cfg(['setup', 'translations', 'cache']) !== true) {
-        log_warn('Translations caching is disabled, caching will not take effect until enabled');
+        log_warning('Translations caching is disabled, caching will not take effect until enabled');
     }
     return true;
 }
