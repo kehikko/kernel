@@ -142,7 +142,7 @@ function cache_config()
 {
     $file = cache_write_system_data('configuration.cache', cfg_init());
     if ($file) {
-        log_info('Wrote configuration cache to file: ' . $file);
+        log_notice('Wrote configuration cache to file: ' . $file);
     }
     return true;
 }
