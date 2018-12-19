@@ -155,10 +155,10 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
     /* load configuration array */
     $value = cfg_init();
 
-    /* check for invalid characters (with the exception of accepting "\", these are from PSR-16 invalid key characters) */
-    if (strpbrk(implode('.', $path), '{}()/@:')) {
+    /* check for invalid characters (with the exception of accepting "\" and "@", these are from PSR-16 invalid key characters) */
+    if (strpbrk(implode('.', $path), '{}()/:')) {
         $caller = debug_backtrace(0, 2);
-        log_warning('Not recommended character, one of these "{}()/@:", in configuration key: {0} ({1}:{2})', [implode('.', $path), $caller[0]['file'], $caller[0]['line']]);
+        log_warning('Not recommended character, one of these "{}()/:", in configuration key: {0} ({1}:{2})', [implode('.', $path), $caller[0]['file'], $caller[0]['line']]);
     }
 
     /* find value that was asked */
