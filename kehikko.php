@@ -21,10 +21,13 @@ foreach ($files as $file) {
     if (!isset($yaml['commands']) || !is_array($yaml['commands'])) {
         continue;
     }
-    $prefix = strtolower(isset($yaml['prefix']) && is_string($yaml['prefix']) ? $yaml['prefix'] : basename(dirname($file)));
+    $prefix = strtolower(basename(dirname($file))) . ':';
+    if (array_key_exists('prefix', $yaml)) {
+        $prefix = is_string($yaml['prefix']) && !empty($yaml['prefix']) ? strtolower($yaml['prefix']) . ':' : '';
+    }
 
     foreach ($yaml['commands'] as $command => $data) {
-        $command     = $prefix . ':' . $command;
+        $command     = $prefix . $command;
         $description = tr(isset($data['description']) ? $data['description'] : 'no description');
         $cmd         = $optparser->addCommand($command, array('description' => $description));
         if (isset($data['options'])) {
