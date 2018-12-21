@@ -1,3 +1,4 @@
+prefix: false
 commands:
   cache:clear:
     description: Clear cache
