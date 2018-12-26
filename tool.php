@@ -89,7 +89,7 @@ function tool_call_parse($call, array $args = [], $log = true)
     /* function call */
     if (count($parts) == 1) {
         if (!function_exists($parts[0])) {
-            log_if_err($log, 'Call parsing failed, function does not exist: ' . $call['call']);
+            log_if_error($log, 'Call parsing failed, function does not exist: ' . $call['call']);
             return null;
         }
         return ['function' => new ReflectionFunction($parts[0]), 'args' => $args];
@@ -104,13 +104,13 @@ function tool_call_parse($call, array $args = [], $log = true)
         /* given argument is an object already that we want to use */
         $object = $all_args[$parts[0]];
         if (!method_exists($object, $parts[1])) {
-            log_if_err($log, 'Call parsing failed, method does not exist: {0}@{1}', [get_class($object), $parts[1]]);
+            log_if_error($log, 'Call parsing failed, method does not exist: {0}@{1}', [get_class($object), $parts[1]]);
             return null;
         }
         $method = new ReflectionMethod($object, $parts[1]);
         return ['object' => $object, 'method' => $method, 'args' => $args];
     } else {
-        log_if_err($log, 'Call parsing failed, class or variable does not exist or is not a class: ' . $call['call']);
+        log_if_error($log, 'Call parsing failed, class or variable does not exist or is not a class: ' . $call['call']);
         return null;
     }
 
@@ -121,7 +121,7 @@ function tool_call_parse($call, array $args = [], $log = true)
 
     /* check that reflected class has method we should be calling */
     if (!$class->hasMethod($parts[1])) {
-        log_if_err($log, 'Call parsing failed, method does not exist: ' . $call['call']);
+        log_if_error($log, 'Call parsing failed, method does not exist: ' . $call['call']);
         return null;
     }
     $method = $class->getMethod($parts[1]);
@@ -133,7 +133,7 @@ function tool_call_parse($call, array $args = [], $log = true)
 
     /* method is not static, check if class can be constructed without parameters */
     if ($class->hasMethod('__construct') && $class->getMethod('__construct')->getNumberOfRequiredParameters() > 0) {
-        log_if_err($log, 'Call parsing failed, trying to use a non-static method with class that requires parameters for constructor: ' . $call['call']);
+        log_if_error($log, 'Call parsing failed, trying to use a non-static method with class that requires parameters for constructor: ' . $call['call']);
         return null;
     }
 
