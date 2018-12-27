@@ -283,7 +283,7 @@ function tool_validate($type, &$value, $convert = true, $extra = null)
         return true;
     } else if ($type == 'array' && is_array($value)) {
         return true;
-    } else if ($type == 'object' && is_array($value)) {
+    } else if ($type == 'object' && is_object($value)) {
         return true;
     } else if ($type == 'email' && filter_var($value, FILTER_VALIDATE_EMAIL)) {
         return true;
