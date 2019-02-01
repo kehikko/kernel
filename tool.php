@@ -244,7 +244,10 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
 
     /* check system paths for given file: config, modules, routes and vendor */
     if (!is_array($paths)) {
-        $paths = [cfg(['path', 'config']), cfg(['path', 'vendor']), cfg(['path', 'modules']), cfg(['path', 'routes'])];
+        $paths = [cfg(['path', 'config']), cfg(['path', 'vendor']), cfg(['path', 'modules'])];
+        if (cfg(['path', 'routes'])) {
+            $paths[] = cfg(['path', 'routes']);
+        }
     }
     foreach ($paths as $path) {
         $files = scandir($path);

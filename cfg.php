@@ -29,7 +29,7 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
     /* load base config */
     $cfg = tool_yaml_load([$cfg_file, dirname($cfg_file) . '/' . basename($cfg_file, '.yml') . '-local.yml'], false);
     if (empty($cfg)) {
-        throw new Exception('Base configuration file is invalid, path: ' . $cfg_file);
+        $cfg = [];
     }
 
     /* setup defaults, if something is not already set in config */
@@ -48,12 +48,12 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
             'root'    => realpath(dirname($cfg_file) . '/../'),
             'config'  => realpath(dirname($cfg_file)),
             'modules' => 'modules',
-            'routes'  => 'routes',
-            'views'   => 'views',
+            // 'routes'  => 'routes',
+            // 'views'   => 'views',
             'cache'   => 'cache',
             'data'    => 'data',
             'tmp'     => '/tmp',
-            'web'     => 'web',
+            // 'web'     => 'web',
             'log'     => 'log',
             'vendor'  => 'vendor',
         ),
@@ -123,6 +123,12 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
         }
     };
     $expand($cfg);
+
+    /* include autoloader under modules */
+    $file = $cfg['path']['modules'] . '/autoload.php';
+    if (file_exists($file)) {
+        require_once $file;
+    }
 
     return $cfg;
 }

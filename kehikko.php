@@ -22,6 +22,9 @@ foreach ($files as $file) {
         continue;
     }
     $prefix = strtolower(basename(dirname($file))) . ':';
+    if ($prefix == 'modules:') {
+        $prefix = '';
+    }
     if (array_key_exists('prefix', $yaml)) {
         $prefix = is_string($yaml['prefix']) && !empty($yaml['prefix']) ? strtolower($yaml['prefix']) . ':' : '';
     }
