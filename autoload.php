@@ -3,7 +3,6 @@
 spl_autoload_register(function ($class) {
     /* first check under modules */
     $file = cfg(['path', 'modules'], null, null, false) . '/' . str_replace('\\', '/', $class) . '.php';
-    var_dump($file);
     if (file_exists($file)) {
         require_once $file;
     }
