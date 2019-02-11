@@ -193,7 +193,7 @@ function tool_call_ctx_get(string $key)
     return null;
 }
 
-function tool_call_ctx($set_to = null)
+function tool_call_ctx(array $set_to = null)
 {
     static $ctx = [];
     if ($set_to !== null) {
@@ -292,13 +292,19 @@ function tool_validate($type, &$value, $convert = true, $extra = null)
         return true;
     } else if ($type == 'ip' && filter_var($value, FILTER_VALIDATE_IP)) {
         return true;
-    } else if ($type == 'ipv4' && filter_var($value, FILTER_VALIDATE_IPV4)) {
+    } else if ($type == 'ipv4' && filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         return true;
-    } else if ($type == 'ipv6' && filter_var($value, FILTER_VALIDATE_IPV6)) {
+    } else if ($type == 'ipv6' && filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
         return true;
     } else if ($type == 'url' && filter_var($value, FILTER_VALIDATE_URL)) {
         return true;
     } else if ($type == 'datetime') {
+        if (is_a($value, 'DateTime')) {
+            return true;
+        }
+        if (!is_string($value)) {
+            return false;
+        }
         $t = date_create($value, is_a($extra, 'DateTimeZone') ? $extra : null);
         if ($t !== false) {
             $value = $convert ? $t : $value;
@@ -328,6 +334,10 @@ function tool_validate($type, &$value, $convert = true, $extra = null)
 
 function tool_validate_fqdn($domain, $allow_wildcard = false)
 {
+    if (!is_string($domain)) {
+        return false;
+    }
+
     if ($allow_wildcard and substr($domain, 0, 2) == '*.') {
         $domain = substr($domain, 2);
     }
