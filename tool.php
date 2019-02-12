@@ -250,6 +250,9 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
         }
     }
     foreach ($paths as $path) {
+        if (empty($path)) {
+            continue;
+        }
         $files = scandir($path);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') {
