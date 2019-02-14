@@ -17,6 +17,6 @@
   },
   "bin": ["kehikko", "kehikko.php"],
   "autoload": {
-    "files": ["autoload.php", "error.php", "tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "tr.php"]
+    "files": ["autoload.php", "error.php", "tool.php", "cfg.php", "cache.php", "log.php", "emit.php", "tr.php", "validate.php"]
   }
 }
