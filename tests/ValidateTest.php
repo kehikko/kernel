@@ -11,9 +11,13 @@ final class ValidateTest extends PHPUnit\Framework\TestCase
         $str = 'this is a string';
         $this->assertTrue(validate('string', $str));
         $this->assertEquals($str, 'this is a string');
+        $str = '12345678';
+        $this->assertTrue(validate('string', $str, true, ['min' => 8, 'max' => 8, 'accept' => ['12345678']]));
         /* value is evaluated as string also when type evaluates as empty */
+        $str = 'this is a string';
         $this->assertTrue(validate('', $str));
         $this->assertEquals($str, 'this is a string');
+        $str = 'this is a string';
         $this->assertTrue(validate(null, $str));
         $this->assertEquals($str, 'this is a string');
 
@@ -24,6 +28,12 @@ final class ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertFalse(validate('string', $value));
         $value = [];
         $this->assertFalse(validate('string', $value));
+        $str = '12345678';
+        $this->assertFalse(validate('string', $str, true, ['max' => 7]));
+        $str = '12345678';
+        $this->assertFalse(validate('string', $str, true, ['min' => 9]));
+        $str = '12345678';
+        $this->assertFalse(validate('string', $str, true, ['accept' => ['x12345678']]));
     }
 
     public function testInt(): void
@@ -35,6 +45,8 @@ final class ValidateTest extends PHPUnit\Framework\TestCase
         $value = '0333';
         $this->assertTrue(validate('int', $value, false));
         $this->assertTrue($value === '0333');
+        $value = 2;
+        $this->assertTrue(validate('int', $value, true, ['min' => 2, 'max' => 2, 'accept' => [2]]));
 
         /* evaluates that are false */
         $value = false;
@@ -47,6 +59,12 @@ final class ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertFalse(validate('int', $value));
         $value = '1e6';
         $this->assertFalse(validate('int', $value));
+        $value = 3;
+        $this->assertFalse(validate('int', $value, true, ['min' => 2, 'max' => 3, 'accept' => [2]]));
+        $value = 4;
+        $this->assertFalse(validate('int', $value, true, ['min' => 2, 'max' => 3, 'accept' => [4]]));
+        $value = 1;
+        $this->assertFalse(validate('int', $value, true, ['min' => 2, 'max' => 3, 'accept' => [1]]));
     }
 
     public function testFloat(): void
@@ -249,7 +267,11 @@ final class ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertTrue($value->getTimestamp() === 1549876156);
 
         $value = '2019-02-11T11:09:16';
-        $this->assertTrue(validate('datetime', $value, true, new DateTimeZone('+0200')));
+        $this->assertTrue(validate('datetime', $value, true, ['timezone' => new DateTimeZone('+0200')]));
+        $this->assertTrue($value->getTimestamp() === 1549876156);
+
+        $value = '2019-02-11T11:09:16';
+        $this->assertTrue(validate('datetime', $value, true, ['timezone' => '+0200']));
         $this->assertTrue($value->getTimestamp() === 1549876156);
 
         $value = '2018-10-01T19:05:00+0200';
