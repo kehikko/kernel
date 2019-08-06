@@ -253,7 +253,7 @@ function tool_call_successful($call, $returned)
     return true;
 }
 
-function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $find_dirs = false)
+function tool_system_find_files(array $filenames, $paths = null, $depth = 4, $find_dirs = false)
 {
     $found = array();
 
