@@ -1,63 +1,48 @@
 <?php
 
-function validate($type, &$value, $convert = true, array $options = [])
+function validate($type, &$value, $convert = true, array $options = [], $identifier = '<no-id-given>')
 {
     /* check accepted values */
-    if (isset($options['accept']) && is_array($options['accept']) && !in_array($value, $options['accept'])) {
-        return false;
+    $list = tool_call_simple($options, 'accept');
+    if ($list !== null) {
+        if (!is_array($list)) {
+            log_error('Invalid validator description, guard "accept" should be an array, {0} received, debug identifier: {1}', [gettype($list), $identifier]);
+            return false;
+        }
+        if (!in_array($value, $list)) {
+            return false;
+        }
     }
 
     /* check min and max */
-    if (isset($options['min']) && is_numeric($options['min'])) {
+    $min = tool_call_simple($options, 'min');
+    if (is_numeric($min)) {
         if (validate_has_type($type, 'string')) {
             /* need nested if's here so next numeric if won't mix up things */
-            if (strlen($value) < $options['min']) {
+            if (strlen($value) < $min) {
                 return false;
             }
-        } else if (is_numeric($value) && $value < $options['min']) {
+        } else if (is_numeric($value) && $value < $min) {
             return false;
         }
+    } else if ($min !== null) {
+        log_error('Invalid validator description, guard "min" should be a number, {0} received, debug identifier: {1}', [gettype($min), $identifier]);
+        return false;
     }
-    if (isset($options['max']) && is_numeric($options['max'])) {
+    $max = tool_call_simple($options, 'max');
+    if (is_numeric($max)) {
         if (validate_has_type($type, 'string')) {
             /* need nested if's here so next numeric if won't mix up things */
-            if (strlen($value) > $options['max']) {
+            if (strlen($value) > $max) {
                 return false;
             }
-        } else if (is_numeric($value) && $value > $options['max']) {
+        } else if (is_numeric($value) && $value > $max) {
             return false;
         }
+    } else if ($max !== null) {
+        log_error('Invalid validator description, guard "max" should be a number, {0} received, debug identifier: {1}', [gettype($max), $identifier]);
+        return false;
     }
-
-    /* TODO: enable using calls with min/max/accept */
-    // /* check min/max */
-    // if (isset($node['min'])) {
-    //     $min = isset($node['min']['call']) ? tool_call($node['min'], $args) : $node['min'];
-    //     $min = is_string($min) && !is_numeric($min) ? tr($min) : $min;
-    //     if (!is_numeric($min)) {
-    //         log_error('Invalid api description, guard "min" should be a number or number returned by call, it is not for key: {0}, it is type: {1}', [implode($path, '.'), gettype($min)]);
-    //     } else if (!is_numeric($value) || $value < $min) {
-    //         http_e400('Invalid number value (under minimum) for key: ' . implode($path, '.'));
-    //     }
-    // }
-    // if (isset($node['max'])) {
-    //     $max = isset($node['max']['call']) ? tool_call($node['max'], $args) : $node['max'];
-    //     $max = is_string($max) && !is_numeric($max) ? tr($max) : $max;
-    //     if (!is_numeric($max)) {
-    //         log_error('Invalid api description, guard "max" should be a number or number returned by call, it is not for key: {0}, it is type: {1}', [implode($path, '.'), gettype($max)]);
-    //     } else if (!is_numeric($value) || $value > $max) {
-    //         http_e400('Invalid number value (over maximum) for key: ' . implode($path, '.'));
-    //     }
-    // }
-    // /* check accepted values */
-    // if (isset($node['accept'])) {
-    //     $accept = isset($node['accept']['call']) ? tool_call($node['accept'], $args) : $node['accept'];
-    //     if (!is_array($accept)) {
-    //         log_error('Invalid api description, guard "accept" should be an array or array returned by call, it is not for key: {0}, it is type: {1}', [implode($path, '.'), gettype($accept)]);
-    //     } else if (!in_array($value, $accept, true)) {
-    //         http_e400('Invalid value (not in accepted values) for key: ' . implode($path, '.'));
-    //     }
-    // }
 
     /* check type */
     if (validate_has_type($type, 'string') && is_string($value)) {

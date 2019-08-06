@@ -184,6 +184,21 @@ function tool_call($call, array $args = [], $log = true, $silent = false)
     return null;
 }
 
+function tool_call_simple($call, string $key = null, array $args = [], $log = true, $silent = false)
+{
+    if ($key !== null) {
+        if (!isset($call[$key])) {
+            return null;
+        }
+        $call = $call[$key];
+    }
+    if (!isset($call['call']) || !is_string($call['call'])) {
+        return $call;
+    }
+    $r = tool_call($call, $args, $log, $silent);
+    return $r !== null ? $r : $call;
+}
+
 function tool_call_ctx_get(string $key)
 {
     $ctx = tool_call_ctx();
