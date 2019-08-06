@@ -45,17 +45,17 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
             'assets' => '/',
         ),
         'path'  => array(
-            'root'    => realpath(dirname($cfg_file) . '/../'),
-            'config'  => realpath(dirname($cfg_file)),
-            'modules' => 'modules',
+            'root'   => realpath(dirname($cfg_file) . '/../'),
+            'config' => realpath(dirname($cfg_file)),
+            'models' => 'models',
             // 'routes'  => 'routes',
             // 'views'   => 'views',
-            'cache'   => 'cache',
-            'data'    => 'data',
-            'tmp'     => '/tmp',
+            'cache'  => 'cache',
+            'data'   => 'data',
+            'tmp'    => '/tmp',
             // 'web'     => 'web',
-            'log'     => 'log',
-            'vendor'  => 'vendor',
+            'log'    => 'log',
+            'vendor' => 'vendor',
         ),
     );
     $cfg = array_replace_recursive($cfg_default, $cfg);
@@ -124,8 +124,8 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
     };
     $expand($cfg);
 
-    /* include autoloader under modules */
-    $file = $cfg['path']['modules'] . '/autoload.php';
+    /* include autoloader under models */
+    $file = $cfg['path']['models'] . '/autoload.php';
     if (file_exists($file)) {
         require_once $file;
     }
@@ -137,7 +137,7 @@ function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
  * Return value from configuration, or null if value with given key-chain
  * is not found.
  *
- * @param  mixed $arg1 key or object which is used to find config value under modules-section
+ * @param  mixed $arg1 key or object which is used to find config value under models-section
  * @param  mixed $arg2 default or key depending on first argument
  * @param  mixed $arg3 default or ignored depending on first argument
  * @return mixed value of the given key (can be array etc)
@@ -153,7 +153,7 @@ function cfg($arg1, $arg2 = null, $arg3 = null)
         $default = $arg2;
     } else if (is_object($arg1) && (is_string($arg2) || is_array($arg2))) {
         $path = is_array($arg2) ? $arg2 : explode('.', $arg2);
-        array_unshift($path, 'modules', get_class($arg1));
+        array_unshift($path, 'models', get_class($arg1));
         $default = $arg3;
     } else {
         throw new Exception('invalid cfg() parameter');

@@ -83,13 +83,9 @@ function validate($type, &$value, $convert = true, array $options = [], $identif
             return false;
         }
         /* optional default timezone if timezone is not specified in value */
-        $timezone = null;
-        if (isset($options['timezone'])) {
-            if (is_string($options['timezone'])) {
-                $timezone = new DateTimeZone($options['timezone']);
-            } else if (is_a($options['timezone'], 'DateTimeZone')) {
-                $timezone = $options['timezone'];
-            }
+        $timezone = tool_call_simple($options, 'timezone');
+        if (is_string($timezone)) {
+            $timezone = new DateTimeZone($timezone);
         }
         /* check for a valid datetime value */
         $t = date_create($value, $timezone);

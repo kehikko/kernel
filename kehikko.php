@@ -22,7 +22,7 @@ foreach ($files as $file) {
         continue;
     }
     $prefix = strtolower(basename(dirname($file))) . ':';
-    if ($prefix == 'modules:') {
+    if ($prefix == 'models:') {
         $prefix = '';
     }
     if (array_key_exists('prefix', $yaml)) {

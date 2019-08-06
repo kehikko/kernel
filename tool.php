@@ -192,7 +192,7 @@ function tool_call_simple($call, string $key = null, array $args = [], $log = tr
         }
         $call = $call[$key];
     }
-    if (!isset($call['call']) || !is_string($call['call'])) {
+    if (!is_array($call) || !isset($call['call']) || !is_string($call['call'])) {
         return $call;
     }
     $r = tool_call($call, $args, $log, $silent);
@@ -257,9 +257,9 @@ function tool_system_find_files(array $filenames, $paths = null, $depth = 2, $fi
 {
     $found = array();
 
-    /* check system paths for given file: config, modules, routes and vendor */
+    /* check system paths for given file: config, models, routes and vendor */
     if (!is_array($paths)) {
-        $paths = [cfg(['path', 'config']), cfg(['path', 'vendor']), cfg(['path', 'modules'])];
+        $paths = [cfg(['path', 'config']), cfg(['path', 'vendor']), cfg(['path', 'models'])];
         if (cfg(['path', 'routes'])) {
             $paths[] = cfg(['path', 'routes']);
         }
