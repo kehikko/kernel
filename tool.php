@@ -192,6 +192,10 @@ function tool_call_simple($call, string $key = null, array $args = [], $log = tr
         }
         $call = $call[$key];
     }
+    /* if string starts and ends with '%'-sign, then it is considered as call */
+    if (is_string($call) && substr(trim($call), 0, 1) == '%' && substr(trim($call), -1) == '%') {
+        $call = ['call' => trim($call, "% \t\n\r\0\x0B")];
+    }
     if (!is_array($call) || !isset($call['call']) || !is_string($call['call'])) {
         return $call;
     }
