@@ -1,0 +1,22 @@
+
+test:
+  testing: true
+  str1: first test string
+  str2: second test string
+  num: 17
+  expand: '{test.str1} and {test.str2} do not have the total length of {test.num}'
+  are_we_testing: '{test.testing}'
+  array:
+    - 1
+    - 2
+    - [ '{test.num}', 7, 8, 9 ]
+  i_has_an_array: '{test.array}'
+
+path:
+  models: '.'
+  cache: '.'
+  data: '.'
+  tmp: '.'
+  log: '.'
+  vendor: '.'
+

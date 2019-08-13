@@ -1,0 +1,4 @@
+
+local:
+  description: Just test of loading a '-local' configuration
+  num: '{test.num}'
