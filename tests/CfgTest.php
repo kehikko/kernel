@@ -21,5 +21,9 @@ final class CfgTest extends PHPUnit\Framework\TestCase
         /* local */
         $this->assertIsString(cfg('local.description'));
         $this->assertEquals(17, cfg('local.num'));
+        /* default */
+        $this->assertTrue(cfg('test.empty', true));
+        $this->assertFalse(cfg('test.empty', false));
+        $this->assertTrue(cfg('test.testing', false));
     }
 }

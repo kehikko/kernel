@@ -1,0 +1,24 @@
+
+setup:
+  debug: true
+
+log:
+  console:
+    enabled: false
+  file:
+    enabled: false
+  syslog:
+    enabled: false
+
+signals:
+  log_record:
+    - call: log_test_signal
+
+path:
+  models: '.'
+  cache: '.'
+  data: '.'
+  tmp: '.'
+  log: '.'
+  vendor: '.'
+
