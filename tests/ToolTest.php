@@ -1,8 +1,6 @@
 <?php
 declare (strict_types = 1);
 
-require_once __DIR__ . '/../tool.php';
-
 final class ToolTest extends PHPUnit\Framework\TestCase
 {
     public function testCallParse(): void

@@ -1,8 +1,6 @@
 <?php
 declare (strict_types = 1);
 
-require_once __DIR__ . '/../validate.php';
-
 final class ValidateTest extends PHPUnit\Framework\TestCase
 {
     public function testString(): void

@@ -1,0 +1,17 @@
+
+signals:
+  EmitTest@testEmit:
+    - call: emit_global
+    - call: EmitTestClass@testEmitCall1
+  test_signal:
+    - call: EmitTestClass@testEmitCall2
+
+
+path:
+  models: '.'
+  cache: '.'
+  data: '.'
+  tmp: '.'
+  log: '.'
+  vendor: '.'
+

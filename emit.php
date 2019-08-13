@@ -19,7 +19,9 @@ function emit(string $signal = null, array $args = [])
     if ($signal === null) {
         $caller = debug_backtrace(0, 2);
         $signal = (isset($caller[1]['class']) ? $caller[1]['class'] . '@' : '') . $caller[1]['function'];
-        $args   = $caller[1]['args'];
+        if (empty($args)) {
+            $args = $caller[1]['args'];
+        }
     }
 
     $signals = cfg(['signals', $signal], array());
@@ -29,6 +31,9 @@ function emit(string $signal = null, array $args = [])
     }
 
     foreach ($signals as $index => $signal) {
+        /* create and use call manually here instead of tool_call() or tool_call_simple()
+         * because emit must not use current context arguments
+         */
         $reflect = tool_call_parse($signal, $args, false);
         if (isset($reflect['method'])) {
             $reflect['method']->invokeArgs($reflect['object'], $reflect['args']);

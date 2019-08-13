@@ -1,8 +1,11 @@
 <?php
 
-function cfg_init(string $cfg_file = null, string $cfg_cache_file = null)
+function cfg_init(string $cfg_file = null, string $cfg_cache_file = null, bool $reload = false)
 {
     static $cfg = null;
+    if ($reload) {
+        $cfg = null;
+    }
     if ($cfg !== null) {
         return $cfg;
     }
