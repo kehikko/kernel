@@ -1,0 +1,12 @@
+
+cache:
+  enabled: true
+
+path:
+  models: '.'
+  cache: '.'
+  data: '.'
+  tmp: '.'
+  log: '.'
+  vendor: '.'
+

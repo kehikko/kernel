@@ -33,7 +33,7 @@ function cache($object = null)
         public function get($key, $default = null) {return $default;}
         public function set($key, $value, $ttl = null) {return false;}
         public function delete($key) {return true;}
-        public function clear($key) {return true;}
+        public function clear() {return true;}
         public function getMultiple($keys, $default = null) {
             foreach ($keys as $key) {
                 yield $key => $default;
