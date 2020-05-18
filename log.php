@@ -96,7 +96,25 @@ function log_record(int $priority, string $message, array $context = [], $emit =
                 }
             }
             if ($f) {
-                @fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' . $levels[$priority] . ' ' . $message . "\n");
+                $colors = cfg(['log', 'file', 'colors'], true);
+                if ($colors) {
+                    $color_by_priority = [
+                        LOG_VERBOSE => LDC_PURPLE,
+                        LOG_DEBUG   => LDC_PURPLE,
+                        LOG_INFO    => LDC_BLUE,
+                        LOG_NOTICE  => LDC_CYAN,
+                        LOG_WARNING => LDC_YELLOW,
+                        LOG_ERR     => LDC_RED,
+                        LOG_CRIT    => LDC_REDB,
+                        LOG_ALERT   => LDC_REDB,
+                        LOG_EMERG   => LDC_REDB,
+                    ];
+                    @fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' .
+                        $color_by_priority[$priority] . $levels[$priority] . LDC_DEFAULT . ' ' . $message . "\n");
+                } else {
+                    @fwrite($f, date('Y-m-d H:i:s') . ' ' . $address . ' ' . $port . ' ' . $session_id . ' ' .
+                        $levels[$priority] . ' ' . $message . "\n");
+                }
             }
         }
     }
@@ -128,6 +146,25 @@ function log_record(int $priority, string $message, array $context = [], $emit =
     /* usually always emit signal (note that $message will be the translated one here, not the original) */
     if ($emit) {
         emit();
+    }
+}
+
+function log_backtrace()
+{
+    /* do not log debug messages if not in debug mode */
+    if (!cfg_debug() && $priority >= LOG_DEBUG) {
+        return;
+    }
+
+    $trace = debug_backtrace();
+    foreach ($trace as $index => $line) {
+        $context = [
+            'index' => $index,
+            'file'  => isset($line['file']) ? $line['file'] : '?',
+            'line'  => isset($line['line']) ? $line['line'] : '?',
+            'func'  => isset($line['function']) ? (isset($line['class']) ? $line['class'] . $line['type'] : '') . $line['function'] : '?',
+        ];
+        log_record(LOG_VERBOSE, 'backtrace #{index}: {file}:{line}:{func}', $context, false);
     }
 }
 
